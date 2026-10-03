@@ -36,6 +36,12 @@ Any help is very welcome. Feel free to create issues or pull requests. If you'd 
 
 Tested on Win10 with Visual Studio 2019 or 2022.
 
+Without Visual Studio, the program (not the installer) can be built with the [.NET SDK](https://dotnet.microsoft.com/download) and the .NET Framework 4.8 targeting pack:
+
+```
+dotnet build WtProgram/WtProgram.fsproj -c Release
+```
+
 - Clone
 
     ```
