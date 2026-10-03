@@ -57,7 +57,10 @@ type TabStripDecorator(group:WindowGroup) as this =
             this.updateTsPlacement()
 
         group.added.Add <| fun hwnd ->
-            if this.tabsInTitleBar then Win32Helper.SetCaptionHidden(hwnd, true)
+            // this waits for the window to repaint its frame, which a window that is still starting
+            // up may take a while to do; don't hold up the group (and the tab strip) meanwhile
+            if this.tabsInTitleBar then
+                ThreadHelper.queueBackground <| fun() -> Win32Helper.SetCaptionHidden(hwnd, true)
 
         group.removed.Add <| fun hwnd ->
             Win32Helper.SetCaptionHidden(hwnd, false)
@@ -98,9 +101,9 @@ type TabStripDecorator(group:WindowGroup) as this =
             group.zorder.value.tryHead.bind <| fun hwnd ->
                 let mutable bounds = Rectangle.Empty
                 if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    // start at the frame edge so the tabs cover the window's own icon
-                    let rightMargin = Dpi.px 4
-                    let rect = Rect(Pt(bounds.X, bounds.Y), Sz(bounds.Width - rightMargin, bounds.Height))
+                    // keep clear of the window's rounded corner and border
+                    let left, top, right, bottom = Dpi.px 6, Dpi.px 3, Dpi.px 4, Dpi.px 2
+                    let rect = Rect(Pt(bounds.X + left, bounds.Y + top), Sz(bounds.Width - left - right, bounds.Height - top - bottom))
                     if rect.size.width > 0 && rect.size.height > 0 then Some(rect) else None
                 else None
         else None

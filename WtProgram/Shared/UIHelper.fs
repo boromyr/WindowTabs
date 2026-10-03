@@ -10,6 +10,45 @@ open Bemo.Win32
 type INode =
     abstract member showSettings : bool
 
+// TreeViewAdv's own expand glyph is a fixed 9px image, tiny on scaled displays; this draws it to scale.
+type ScaledPlusMinus() =
+    inherit NodeControls.NodeControl()
+
+    static member attach (tree:TreeViewAdv) (column:TreeColumn) =
+        tree.ShowPlusMinus <- false
+        tree.Indent <- Dpi.px 19
+        let control = ScaledPlusMinus()
+        control.ParentColumn <- column
+        tree.NodeControls.Insert(0, control)
+
+    member private this.width = Dpi.px 16
+
+    override this.MeasureSize(node, context) = Size(this.width, this.width)
+
+    override this.Draw(node, context) =
+        if node.CanExpand then
+            let r = context.Bounds
+            let side = Dpi.px 9 ||| 1 // odd, so the sign sits in the middle
+            let x = r.X + (this.width - side) / 2
+            let y = r.Y + (r.Height - side) / 2
+            use pen = new Pen(SystemColors.GrayText, float32(Dpi.px 1))
+            let g = context.Graphics
+            g.DrawRectangle(pen, x, y, side - 1, side - 1)
+            let mid = side / 2
+            let inset = max 2 (side / 4)
+            g.DrawLine(pen, x + inset, y + mid, x + side - 1 - inset, y + mid)
+            if node.IsExpanded.not then
+                g.DrawLine(pen, x + mid, y + inset, x + mid, y + side - 1 - inset)
+
+    override this.MouseDown(args) =
+        if args.Button = MouseButtons.Left then
+            args.Handled <- true
+            if args.Node.CanExpand then
+                args.Node.IsExpanded <- args.Node.IsExpanded.not
+
+    // don't let a double click on the glyph also toggle the node
+    override this.MouseDoubleClick(args) = args.Handled <- true
+
 type IntEditor() =
     let control = 
         let control = NumericUpDown()
@@ -249,17 +288,14 @@ module UIHelper =
             //t.Padding <- Padding(10)
             t.RowCount <- fields.length
             t.ColumnCount <- 2
-            // Fixed proportions keep the controls of different forms (e.g. group boxes) in one column
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70f)) |> ignore
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30f)) |> ignore
+            // Make control align right
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10f)) |> ignore
             t
 
         fields.enumerate.iter <| fun (i,(text, control:Control)) ->
             let caption = resources.GetString text
             let label = label caption
             control.Dock <- DockStyle.Fill
-            // fill the row so the text is vertically centred like the control next to it
-            label.Dock <- DockStyle.Fill
             label.Margin <- Padding(0,5,0,5)
             panel.Controls.Add(label)
             panel.Controls.Add(control)

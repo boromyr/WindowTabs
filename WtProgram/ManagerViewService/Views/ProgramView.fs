@@ -151,6 +151,7 @@ type ProgramView() as this=
             control.DataPropertyName <- "Text"
             control.LeftMargin <- Dpi.px 3
             control)
+        ScaledPlusMinus.attach tree nameColumn
         tree.Model <- model
         tree,model
     let panel = 

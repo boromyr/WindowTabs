@@ -75,7 +75,6 @@ type DesktopManagerForm() =
         form.Size <- Size(800, 600)
         form.Text <- title
         form.Icon <- Services.openIcon("Bemo.ico")
-        form.TopMost <- true
         form.Font <- font
         form.BackColor <- Color.White
         // The layout uses 96-DPI pixel sizes while fonts already follow the display DPI,

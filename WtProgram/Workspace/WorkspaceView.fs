@@ -113,6 +113,7 @@ type WorkspaceView() as this =
         tree.NodeControls.Add(this.textNodeControl)
         tree.NodeControls.Add(this.matchTypeNodeControl)
         tree.NodeControls.Add(this.titleNodeControl)
+        ScaledPlusMinus.attach tree this.nameColumn
         tree.Model <- this.model
         tree.Dock <- DockStyle.Fill
         tree.SelectionChanged.Add <| this.onTreeSelectionChanged

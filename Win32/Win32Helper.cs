@@ -146,18 +146,25 @@ namespace Bemo
             POINT dstLocation = POINT.FromPoint(location);
             WinUserApi.UpdateLayeredWindow(hwnd, IntPtr.Zero, ref dstLocation, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero, 0);
         }
-        public static IntPtr GetWindowIcon(IntPtr handle, int iconType)
+        // A window that is still starting up may not answer for a while; don't block on it.
+        const int GetIconTimeoutMs = 50;
+
+        static IntPtr SendGetIcon(IntPtr handle, int iconType)
         {
             IntPtr icon;
-            icon = WinUserApi.SendMessage(handle, WindowMessages.WM_GETICON, (IntPtr)iconType, IntPtr.Zero);
+            if (WinUserApi.SendMessageTimeout(handle, WindowMessages.WM_GETICON, (IntPtr)iconType, IntPtr.Zero,
+                    SendMessageTimeoutFlags.SMTO_ABORTIFHUNG, GetIconTimeoutMs, out icon) == IntPtr.Zero)
+                return IntPtr.Zero;
+            return icon;
+        }
+
+        public static IntPtr GetWindowIcon(IntPtr handle, int iconType)
+        {
+            IntPtr icon = SendGetIcon(handle, iconType);
+            if (icon == IntPtr.Zero && iconType == IconTypeCodes.ICON_SMALL)
+                icon = SendGetIcon(handle, IconTypeCodes.ICON_SMALL2);
             if (icon == IntPtr.Zero)
-            {
-                if (iconType == IconTypeCodes.ICON_SMALL)
-                {
-                    icon = WinUserApi.SendMessage(handle, WindowMessages.WM_GETICON, (IntPtr)IconTypeCodes.ICON_SMALL2, IntPtr.Zero);
-                }
                 icon = WinUserApi.GetClassLong(handle, iconType == IconTypeCodes.ICON_SMALL ? ClassLongFieldOffset.GCL_HICONSM : ClassLongFieldOffset.GCL_HICON);
-            }
             return icon;
         }
         public static String GetWindowText(IntPtr handle)

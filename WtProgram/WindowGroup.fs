@@ -418,11 +418,19 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
                 }
             hookCleanup.map(fun hooks -> hooks.add hwnd dispose)
             this.setTabInfo hwnd
+            // a window that is still starting up may not have answered for its icon yet
+            ThreadHelper.cancelablePostBack 1000 (fun() ->
+                if this.windows.contains(hwnd) then this.setTabInfo hwnd) |> ignore
 
-
-            this.ts.addTab(Tab(hwnd))
+            // move the window into place before anything else so it isn't seen on its own
             this.adjustWindowPlacement(hwnd)
+            this.ts.addTab(Tab(hwnd))
             addedEvent.Trigger(hwnd)
+            // A newly opened window is usually already in the foreground; give it the tab strip
+            // now instead of waiting for the next z-order event, so it isn't seen without tabs.
+            if this.os.foreground.hwnd = hwnd then
+                this.saveZorder()
+                this.setTsParent(hwnd)
 
     member this.removeWindow(hwnd) = this.withUpdate <| fun() ->
         if this.windows.contains(hwnd) then    

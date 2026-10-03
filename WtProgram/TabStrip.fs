@@ -57,6 +57,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     let eventHandlersCell = Cell.create(Set2())
     let tabBgColor = Cell.create(Map2())
     let hwndRef = ref IntPtr.Zero
+    let gcPendingRef = ref false
     let isShrunkCell = Cell.create(false)
 
     let isMouseOverExport = Cell.export <| fun() ->
@@ -217,7 +218,13 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             // fading would let the title bar underneath show through
             let alpha = if inTitleBarCell.value then byte(0xFF) else this.alpha
             this.window.update(this.render, this.location, alpha)
-            GC.Collect()
+            // Rendering leaves many undisposed bitmaps behind. Collecting after every frame
+            // made tab switches and new windows stutter, so batch it instead.
+            if gcPendingRef.Value.not then
+                gcPendingRef := true
+                ThreadHelper.cancelablePostBack 2000 (fun() ->
+                    gcPendingRef := false
+                    GC.Collect()) |> ignore
         else this.window.hide()
     
     member private this.render : Img = 
