@@ -105,7 +105,7 @@ module BaseExtensions =
         member this.cast<'a>() = unbox<'a>(this)
 
     type System.Drawing.Color with
-        static member FromRGB value = Color.FromArgb(0xFF000000 ||| value)
+        static member FromRGB value = Color.FromArgb(0xFF, Color.FromArgb(value))
         member this.ToRGB() = this.ToArgb() &&& 0x00FFFFFF
 
     type System.Collections.IEnumerable with

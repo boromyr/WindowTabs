@@ -128,7 +128,7 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
     member this.windows : Set2<IntPtr> = windowsCell.value
 
     
-    member this.tabAppearance = Services.settings.getValue("tabAppearance").cast<TabAppearanceInfo>()
+    member this.tabAppearance = Services.settings.getValue("tabAppearance").cast<TabAppearanceInfo>().scaled
 
     member private this.withUpdate f =
         Cell.beginUpdate()
@@ -487,8 +487,11 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
             if window.isMinimized then
                 window.showWindow(ShowWindowCommands.SW_SHOWNOACTIVATE)
         
-    member this.tabActivate(Tab(hwnd), force) = 
+    member this.tabActivate(Tab(hwnd), force) =
         let window = this.os.windowFromHwnd(hwnd)
+        // Hand the tab strip to the new window first: owned windows are raised with their owner,
+        // otherwise the strip is briefly covered when it sits inside the window's title bar.
+        this.setTsParent(hwnd)
         window.setForegroundOrRestore(force)
         window.bringToTop()
 

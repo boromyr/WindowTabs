@@ -7,6 +7,35 @@ open Bemo.Win32.Forms
 open System.Resources
 open System.Reflection
 
+module DarkTheme =
+    let isDark() =
+        try
+            match Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", box 1) with
+            | :? int as v -> v = 0
+            | _ -> false
+        with _ -> false
+    let back = Color.FromArgb(32, 32, 32)
+    let inputBack = Color.FromArgb(45, 45, 45)
+    let fore = Color.FromArgb(230, 230, 230)
+
+    let rec apply (c:Control) =
+        match c with
+        | :? TextBox | :? NumericUpDown | :? ComboBox -> c.BackColor <- inputBack
+        | :? Button as b ->
+            b.BackColor <- inputBack
+            b.FlatStyle <- FlatStyle.Flat
+        | _ -> c.BackColor <- back
+        c.ForeColor <- fore
+        match c with
+        | :? ToolStrip as ts ->
+            ts.RenderMode <- ToolStripRenderMode.System
+            ts.BackColor <- back
+            ts.ForeColor <- fore
+            for item in ts.Items do
+                item.ForeColor <- fore
+        | _ -> ()
+        for child in c.Controls do apply child
+
 type DesktopManagerForm() =
     let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
     let title = sprintf "WindowTabs Settings (version %s)"  (Services.program.version)
@@ -49,6 +78,11 @@ type DesktopManagerForm() =
         form.TopMost <- true
         form.Font <- font
         form.BackColor <- Color.White
+        // The layout uses 96-DPI pixel sizes while fonts already follow the display DPI,
+        // so scale the geometry to match (TableLayoutPanels scale their absolute rows too).
+        form.Scale(SizeF(float32(Dpi.scale()), float32(Dpi.scale())))
+        if DarkTheme.isDark() then
+            DarkTheme.apply form
         form
 
     member this.show() =

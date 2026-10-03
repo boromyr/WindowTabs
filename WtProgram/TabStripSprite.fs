@@ -14,7 +14,10 @@ type IconSprite = {
             let bitmap = Img(this.size)
             let g = bitmap.graphics
             try
-                do  g.DrawIcon(this.icon, 0, 0)
+                // pick the icon image closest to the target size, then scale it to fit exactly
+                use sized = new Icon(this.icon, this.size.Size)
+                do g.InterpolationMode <- InterpolationMode.HighQualityBicubic
+                do g.DrawIcon(sized, Rect(Pt.empty, this.size).Rectangle)
             with | e -> ()
             bitmap
         member this.children = List2()
@@ -31,10 +34,10 @@ type CloseButtonSprite = {
         | true, false -> Some(Color.DarkRed)
         | _ -> None
     member private this.penColor = if this.bgColor.IsSome then Color.White else Color.Gray
-    member private this.pen = new Pen(this.penColor, 2.0f)
+    member private this.pen = new Pen(this.penColor, float32(Dpi.px 2))
     interface ISprite with
         member this.image = 
-            let crossOffest = 3
+            let crossOffest = Dpi.px 3
             let bitmap = Img(this.size)
             let g = bitmap.graphics
             g.FillEllipse(new SolidBrush(this.bgColor.def(Color.FromArgb(1, 1, 1, 1))), Rect(Pt.empty, this.size).Rectangle)
@@ -76,33 +79,10 @@ type TabSprite<'id> = {
             captured = this.captured = Some(TabClose)
         } :> ISprite
        
-    member private this.edgeWidth = 18
+    // horizontal space between the tab border and its icon / close button
+    member private this.edgeWidth = Dpi.px 8
 
-    member private this.renderTabEdge(path:GraphicsPath, startPoint:PointF, endPoint:PointF) =
-        let width = endPoint.X - startPoint.X
-        let height = endPoint.Y - startPoint.Y
-        let xInc = width / float32(3)
-        let xCurveInc = xInc / float32(3)
-        let yCurveInc = height / float32(3)
-        let bezPoints =
-            [|
-                startPoint
-                PointF(startPoint.X + xInc, startPoint.Y)
-                PointF(startPoint.X + xInc + xCurveInc, startPoint.Y + yCurveInc)
-                PointF(startPoint.X + xInc + float32(2) * xCurveInc, startPoint.Y + float32(2) * yCurveInc)
-                PointF(startPoint.X + float32(2) * xInc, startPoint.Y + float32(3) * yCurveInc)
-                PointF(startPoint.X + float32(3) * xInc, startPoint.Y + float32(3) * yCurveInc)
-            |]
-        do path.AddBezier(
-            bezPoints.[0],
-            bezPoints.[1],
-            bezPoints.[2],
-            bezPoints.[3])
-        do path.AddBezier(
-            bezPoints.[2],
-            bezPoints.[3],
-            bezPoints.[4],
-            bezPoints.[5])
+    member private this.cornerRadius = min (float32(Dpi.px 6)) (float32(this.size.height) / 2.0f)
 
     member private this.bgBrush =
         let color = 
@@ -121,22 +101,31 @@ type TabSprite<'id> = {
 
     member private this.borderPath =
         let path = new GraphicsPath()
-        let bottom,top =
-            match this.direction with
-            | TabUp -> float32(this.size.height),float32(0)
-            | TabDown -> float32(-1), float32(this.size.height - 1)
-        do this.renderTabEdge(path, PointF(float32(0), bottom), PointF(float32(this.edgeWidth), top))
-        do path.AddLine(Point(this.edgeWidth, int(top)), Point(this.size.width - this.edgeWidth, int(top)))
-        do this.renderTabEdge(path, PointF(float32(this.size.width) - float32(this.edgeWidth), top), PointF(float32(this.size.width), bottom))
+        // inset by half a pixel so the 1px border isn't clipped at the bitmap edges
+        let left, top = 0.5f, 0.5f
+        let right = float32(this.size.width) - 0.5f
+        let bottom = float32(this.size.height) - 0.5f
+        let d = 2.0f * this.cornerRadius
+        if d > 0.0f && right - left > d && bottom - top > d then
+            do path.AddArc(left, top, d, d, 180.0f, 90.0f)
+            do path.AddArc(right - d, top, d, d, 270.0f, 90.0f)
+            do path.AddArc(right - d, bottom - d, d, d, 0.0f, 90.0f)
+            do path.AddArc(left, bottom - d, d, d, 90.0f, 90.0f)
+            do path.CloseFigure()
+        else
+            do path.AddRectangle(RectangleF(left, top, max 0.0f (right - left), max 0.0f (bottom - top)))
         path
 
-    member private this.iconSize = Sz(16, 16)
+    // shrink the icon on short tabs (e.g. inside a title bar) so it keeps some padding
+    member private this.iconSize =
+        let side = max (Dpi.px 10) (min (Dpi.px 16) (this.size.height - Dpi.px 8))
+        Sz(side, side)
 
     member private this.iconLocation =
-        let y = (this.size.height - 16) / 2
+        let y = (this.size.height - this.iconSize.height) / 2
         Pt(this.edgeWidth, y)
 
-    member private this.closeButtonSize = Sz(13, 13)
+    member private this.closeButtonSize = Sz(Dpi.px 13, Dpi.px 13)
 
     member private this.closeButtonLocation =
         let x = this.size.width - this.edgeWidth - this.closeButtonSize.width
@@ -144,7 +133,7 @@ type TabSprite<'id> = {
         Pt(x, y)
 
     member this.textLocation =
-        let x = this.iconLocation.x + this.iconSize.width + 5
+        let x = this.iconLocation.x + this.iconSize.width + Dpi.px 5
         Pt(x, 0)
 
     member this.textSize =
@@ -196,7 +185,8 @@ type TabStripSprite<'id> when 'id : equality = {
     onlyIcons: bool
     } with
 
-    member private this.tabOverlap = float(this.appearance.tabOverlap)
+    // rounded tabs sit side by side with a small gap instead of overlapping
+    member private this.tabOverlap = -float(Dpi.px 3)
     member private this.tabMaxLen = float(this.appearance.tabMaxWidth)
 
     member private this.tabSprite (tab:'id) =

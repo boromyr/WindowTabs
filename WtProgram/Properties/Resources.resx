@@ -168,6 +168,9 @@
   <data name="enableHoverActivate" xml:space="preserve">
     <value>Enable mouse hover to activate tab</value>
   </data>
+  <data name="tabsInTitleBar" xml:space="preserve">
+    <value>Show tabs in the window title bar</value>
+  </data>
   <data name="enableShiftScroll" xml:space="preserve">
     <value>Enable Shift+Scroll to switch tabs</value>
   </data>

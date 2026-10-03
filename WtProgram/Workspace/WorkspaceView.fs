@@ -48,13 +48,13 @@ type WorkspaceView() as this =
         wm
 
     member this.nameColumn = Cell.cacheProp this <| fun() ->
-        TreeColumn(resources.GetString("Name"), 200)
+        TreeColumn(resources.GetString("Name"), Dpi.px 200)
 
     member this.matchTypeColumn = Cell.cacheProp this <| fun() ->
-        TreeColumn(resources.GetString("MatchType"), 100)
+        TreeColumn(resources.GetString("MatchType"), Dpi.px 100)
 
     member this.titleColumn = Cell.cacheProp this <| fun() ->
-        TreeColumn(resources.GetString("Title"), 350)
+        TreeColumn(resources.GetString("Title"), Dpi.px 350)
         
     member this.model = Cell.cacheProp this <| fun() -> 
         let model = TreeModel()
@@ -70,7 +70,7 @@ type WorkspaceView() as this =
         let control = NodeControls.NodeStateIcon()
         control.ParentColumn <- this.nameColumn
         control.DataPropertyName <- "icon"
-        control.LeftMargin <- 3
+        control.LeftMargin <- Dpi.px 3
         control
 
     member this.textNodeControl = Cell.cacheProp this <| fun() ->
@@ -79,7 +79,7 @@ type WorkspaceView() as this =
         control.DisplayHiddenContentInToolTip <- true
         control.ParentColumn <- this.nameColumn
         control.DataPropertyName <- "name"
-        control.LeftMargin <- 3
+        control.LeftMargin <- Dpi.px 3
         control
 
     member this.titleNodeControl = Cell.cacheProp this <| fun() ->
@@ -88,7 +88,7 @@ type WorkspaceView() as this =
         control.DisplayHiddenContentInToolTip <- true
         control.ParentColumn <- this.titleColumn
         control.DataPropertyName <- "title"
-        control.LeftMargin <- 3
+        control.LeftMargin <- Dpi.px 3
         control
 
     member this.matchTypeNodeControl = Cell.cacheProp this <| fun() ->
@@ -97,14 +97,15 @@ type WorkspaceView() as this =
         control.DisplayHiddenContentInToolTip <- true
         control.ParentColumn <- this.matchTypeColumn
         control.DataPropertyName <- "matchType"
-        control.LeftMargin <- 3
+        control.LeftMargin <- Dpi.px 3
         control
 
     member this.tree = Cell.cacheProp this <| fun() ->
         let tree = TreeViewAdv()
         tree.FullRowSelect <- true
         tree.UseColumns <- true
-        tree.RowHeight <- 24
+        tree.RowHeight <- Dpi.px 24
+        Dpi.scaleTreeViewHeader tree
         tree.Columns.Add(this.nameColumn)
         tree.Columns.Add(this.matchTypeColumn)
         tree.Columns.Add(this.titleColumn)

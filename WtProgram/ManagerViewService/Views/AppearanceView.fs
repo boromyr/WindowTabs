@@ -120,7 +120,10 @@ type AppearanceView() as this =
 
         let darkBlueBtn = Button()
         darkBlueBtn.AutoSize <- true
-        
+        // GrowOnly (the default) would keep the size doubled by the form's DPI scaling
+        darkBlueBtn.AutoSizeMode <- AutoSizeMode.GrowAndShrink
+        darkBlueBtn.MinimumSize <- darkBtn.Size
+
         darkBlueBtn.Text <- resources.GetString("DarkModeBlue")
         darkBlueBtn.Font <- font
         darkBlueBtn.Click.Add <| fun _ ->

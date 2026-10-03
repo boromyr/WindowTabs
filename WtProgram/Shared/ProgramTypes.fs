@@ -34,6 +34,7 @@ type SettingsRec = {
     enableHoverActivate: bool
     autoHide: bool
     enableShiftScroll: bool
+    tabsInTitleBar: bool
     alignment: string
     }
 

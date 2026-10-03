@@ -204,6 +204,82 @@ namespace Bemo
             WinUserApi.GetWindowRect(hwnd, out rect);
             return rect.ToRectangle();
         }
+        [DllImport("user32.dll")]
+        static extern IntPtr SetThreadDpiAwarenessContext(IntPtr dpiContext);
+        static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct WTA_OPTIONS { public uint Flags; public uint Mask; }
+        [DllImport("uxtheme.dll")]
+        static extern int SetWindowThemeAttribute(IntPtr hwnd, int eAttribute, ref WTA_OPTIONS pvAttribute, int cbAttribute);
+        const int WTA_NONCLIENT = 1;
+        const uint WTNCA_NODRAWCAPTION = 0x1;
+        const uint WTNCA_NODRAWICON = 0x2;
+
+        /// <summary>
+        /// Gets the part of the window's title bar to the left of the caption buttons, in the
+        /// caller's (possibly DPI-virtualized) coordinates. Returns false for windows that draw
+        /// their own title bar (no DWM caption buttons).
+        /// </summary>
+        public static bool TryGetTitleBarBounds(IntPtr hwnd, out Rectangle bounds)
+        {
+            bounds = Rectangle.Empty;
+            try
+            {
+                RECT logicalWindow;
+                if (!WinUserApi.GetWindowRect(hwnd, out logicalWindow)) return false;
+
+                // DWM always reports physical pixels, so read the window rect physically too
+                // and map back to the caller's coordinate space.
+                RECT physicalWindow;
+                IntPtr oldContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+                try { WinUserApi.GetWindowRect(hwnd, out physicalWindow); }
+                finally { SetThreadDpiAwarenessContext(oldContext); }
+
+                RECT frame, buttons;
+                if (DwmApi.DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_EXTENDED_FRAME_BOUNDS, out frame, Marshal.SizeOf(typeof(RECT))) != 0) return false;
+                if (DwmApi.DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_CAPTION_BUTTON_BOUNDS, out buttons, Marshal.SizeOf(typeof(RECT))) != 0) return false;
+                if (buttons.Right - buttons.Left <= 0 || buttons.Bottom - buttons.Top <= 0) return false;
+
+                int physicalWidth = physicalWindow.Right - physicalWindow.Left;
+                int logicalWidth = logicalWindow.Right - logicalWindow.Left;
+                if (physicalWidth <= 0 || logicalWidth <= 0) return false;
+                double scale = (double)physicalWidth / logicalWidth;
+
+                // caption button bounds are relative to the window rect
+                int left = frame.Left;
+                int top = frame.Top;
+                int right = physicalWindow.Left + buttons.Left;
+                int bottom = physicalWindow.Top + buttons.Bottom;
+                if (right <= left || bottom <= top) return false;
+
+                Func<int, int> toLogicalX = x => logicalWindow.Left + (int)Math.Round((x - physicalWindow.Left) / scale);
+                Func<int, int> toLogicalY = y => logicalWindow.Top + (int)Math.Round((y - physicalWindow.Top) / scale);
+                bounds = Rectangle.FromLTRB(toLogicalX(left), toLogicalY(top), toLogicalX(right), toLogicalY(bottom));
+                return true;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Hides or restores the title text and icon the system draws in the window's caption.
+        /// </summary>
+        public static void SetCaptionHidden(IntPtr hwnd, bool hidden)
+        {
+            try
+            {
+                WTA_OPTIONS options = new WTA_OPTIONS();
+                options.Mask = WTNCA_NODRAWCAPTION | WTNCA_NODRAWICON;
+                options.Flags = hidden ? options.Mask : 0;
+                SetWindowThemeAttribute(hwnd, WTA_NONCLIENT, ref options, Marshal.SizeOf(typeof(WTA_OPTIONS)));
+            }
+            catch (DllNotFoundException) { }
+            catch (EntryPointNotFoundException) { }
+        }
+
         public static Rectangle GetRgnBox(IntPtr hRegion)
         {
             RECT rect;

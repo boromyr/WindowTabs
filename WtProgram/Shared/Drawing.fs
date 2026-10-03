@@ -220,3 +220,26 @@ type Ico(icon:Icon) =
 module BitmapExtensions =
     type System.Drawing.Bitmap with
         member this.img = Img(this)
+
+// The process is DPI aware (see Program.fs), so sizes expressed in 96-DPI units
+// need to be scaled to physical pixels.
+module Dpi =
+    let private factor = lazy (
+        try
+            use g = Graphics.FromHwnd(IntPtr.Zero)
+            float(g.DpiX) / 96.0
+        with _ -> 1.0)
+
+    let scale = factor.Force
+
+    let px (value:int) = int(Math.Round(float(value) * scale()))
+
+    // Tab bitmaps are drawn at 96 DPI, so size fonts in pixels instead of points.
+    let font (f:Font) = new Font(f.FontFamily, f.SizeInPoints * 96.0f * float32(scale()) / 72.0f, f.Style, GraphicsUnit.Pixel)
+
+    // Aga TreeViewAdv hard-codes its column header height in pixels in a private field
+    let scaleTreeViewHeader (tree:obj) =
+        try
+            let field = tree.GetType().GetField("_columnHeaderHeight", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.NonPublic)
+            if field <> null then field.SetValue(tree, px(unbox<int>(field.GetValue(tree))))
+        with _ -> ()

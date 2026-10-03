@@ -375,6 +375,9 @@ type Program() as this =
             | :? IDisposable as d -> d.Dispose()
             | _ -> ()
 
+// Without this Windows renders the tabs at 96 DPI and stretches them, which looks blurry
+// on scaled displays. Sizes are scaled explicitly through the Dpi module instead.
+WinUserApi.SetProcessDPIAware()
 Application.SetCompatibleTextRenderingDefault(false)
 let program = Program()
 program.run(List2<obj>([

@@ -59,6 +59,7 @@ type HotKeyView() =
             ("isTabbingEnabledForAllProcessesByDefault", checkBox(prop<IFilterService, bool>(Services.filter, "isTabbingEnabledForAllProcessesByDefault")))
             ("autoHide", settingsCheckbox "autoHide")
             ("alignment", settingsDropDown "alignment" ["Left"; "Center"; "Right"])
+            ("tabsInTitleBar", settingsCheckbox "tabsInTitleBar")
         ])
         "Basics", UIHelper.form fields
 

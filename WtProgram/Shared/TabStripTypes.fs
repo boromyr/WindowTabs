@@ -20,6 +20,8 @@ and TabDragInfo = {
 
 and TabStripPlacment = {
     showInside: bool
+    // drawn over the window's own title bar
+    inTitleBar: bool
     bounds: Rect
     }
 
@@ -56,4 +58,12 @@ and TabAppearanceInfo = {
     tabHeightOffset : int
     tabIndentFlipped : int
     tabIndentNormal : int
-    }
+    } with
+    // sizes are stored in 96-DPI units; this converts them to physical pixels
+    member this.scaled =
+        { this with
+            tabHeight = Dpi.px this.tabHeight
+            tabMaxWidth = Dpi.px this.tabMaxWidth
+            tabHeightOffset = Dpi.px this.tabHeightOffset
+            tabIndentFlipped = Dpi.px this.tabIndentFlipped
+            tabIndentNormal = Dpi.px this.tabIndentNormal }

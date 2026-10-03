@@ -52,7 +52,23 @@ type TabStripDecorator(group:WindowGroup) as this =
         group.bounds.changed.Add <| fun() ->
             this.updateTsPlacement()
 
+        // the title bar placement depends on which window is on top
+        group.zorder.changed.Add <| fun() ->
+            this.updateTsPlacement()
+
+        group.added.Add <| fun hwnd ->
+            if this.tabsInTitleBar then Win32Helper.SetCaptionHidden(hwnd, true)
+
+        group.removed.Add <| fun hwnd ->
+            Win32Helper.SetCaptionHidden(hwnd, false)
+
+        Services.settings.notifyValue "tabsInTitleBar" <| fun _ ->
+            this.invokeAsync <| fun() ->
+                this.updateHiddenCaptions()
+                this.updateTsPlacement()
+
         group.exited.Add <| fun() ->
+            group.windows.items.iter <| fun hwnd -> Win32Helper.SetCaptionHidden(hwnd, false)
             Services.dragDrop.unregisterTarget(this.ts.hwnd)
     
 
@@ -73,7 +89,32 @@ type TabStripDecorator(group:WindowGroup) as this =
     member private this.invokeAsync f = group.invokeAsync f
     member private this.invokeSync f = group.invokeSync f
 
+    member private this.tabsInTitleBar = Services.settings.getValue("tabsInTitleBar").cast<bool>()
+
+    // The part of the top window's title bar left of its caption buttons, for windows
+    // that have a standard (DWM-drawn) title bar.
+    member private this.titleBarBounds =
+        if this.tabsInTitleBar && group.bounds.value.IsSome then
+            group.zorder.value.tryHead.bind <| fun hwnd ->
+                let mutable bounds = Rectangle.Empty
+                if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
+                    // start at the frame edge so the tabs cover the window's own icon
+                    let rightMargin = Dpi.px 4
+                    let rect = Rect(Pt(bounds.X, bounds.Y), Sz(bounds.Width - rightMargin, bounds.Height))
+                    if rect.size.width > 0 && rect.size.height > 0 then Some(rect) else None
+                else None
+        else None
+
+    member private this.updateHiddenCaptions() =
+        let hide = this.tabsInTitleBar
+        group.windows.items.iter <| fun hwnd -> Win32Helper.SetCaptionHidden(hwnd, hide)
+
     member this.placement =
+        match this.titleBarBounds with
+        | Some(bounds) -> { showInside = false; inTitleBar = true; bounds = bounds }
+        | None -> this.windowEdgePlacement
+
+    member private this.windowEdgePlacement =
         let decorator =  {
             windowBounds = group.bounds.value.def(Rect())
             monitorBounds = Mon.all.map(fun m -> m.workRect)
@@ -84,6 +125,7 @@ type TabStripDecorator(group:WindowGroup) as this =
         }
         {
             showInside = decorator.shouldShowInside
+            inTitleBar = false
             bounds = decorator.bounds
         }
 

@@ -16,7 +16,47 @@ module ImgHelper =
                 icon.ToBitmap().img
             with _ ->
                 SystemIcons.Application.ToBitmap().img
-        img.resize(Sz(16,16)).bitmap :> Image
+        img.resize(Sz(Dpi.px 16, Dpi.px 16)).bitmap :> Image
+
+// NodeCheckBox draws a fixed 13px glyph, which is tiny on scaled displays;
+// draw a vector check box at the display's size instead.
+type ScaledNodeCheckBox() =
+    inherit NodeControls.NodeCheckBox()
+
+    member private this.boxSize = Dpi.px NodeControls.NodeCheckBox.ImageSize
+
+    override this.MeasureSize(node, context) = Size(this.boxSize, this.boxSize)
+
+    override this.Draw(node, context) =
+        let bounds = this.GetBounds(node, context)
+        let size = float32(this.boxSize) - 1.0f
+        let box = RectangleF(float32(bounds.X) + 0.5f, float32(bounds.Y) + 0.5f, size, size)
+        let g = context.Graphics
+        let oldMode = g.SmoothingMode
+        g.SmoothingMode <- Drawing2D.SmoothingMode.AntiAlias
+        use path = new Drawing2D.GraphicsPath()
+        let d = size / 4.0f
+        path.AddArc(box.X, box.Y, d, d, 180.0f, 90.0f)
+        path.AddArc(box.Right - d, box.Y, d, d, 270.0f, 90.0f)
+        path.AddArc(box.Right - d, box.Bottom - d, d, d, 0.0f, 90.0f)
+        path.AddArc(box.X, box.Bottom - d, d, d, 90.0f, 90.0f)
+        path.CloseFigure()
+        match this.GetCheckState(node) with
+        | CheckState.Unchecked ->
+            use pen = new Pen(SystemColors.GrayText, float32(Dpi.px 1))
+            g.DrawPath(pen, path)
+        | state ->
+            use fill = new SolidBrush(SystemColors.Highlight)
+            g.FillPath(fill, path)
+            use mark = new Pen(SystemColors.HighlightText, float32(Dpi.px 2))
+            if state = CheckState.Checked then
+                g.DrawLines(mark, [|
+                    PointF(box.X + size * 0.25f, box.Y + size * 0.52f)
+                    PointF(box.X + size * 0.43f, box.Y + size * 0.70f)
+                    PointF(box.X + size * 0.75f, box.Y + size * 0.32f) |])
+            else
+                g.DrawLine(mark, box.X + size * 0.28f, box.Y + size * 0.5f, box.X + size * 0.72f, box.Y + size * 0.5f)
+        g.SmoothingMode <- oldMode
 
 
 type ExeNode(procPath) =
@@ -71,26 +111,27 @@ type ProgramView() as this=
     let tree,model = 
         let tree = TreeViewAdv()
         let model = TreeModel()
-        let nameColumn = TreeColumn(resources.GetString("Name"), 200)
+        let nameColumn = TreeColumn(resources.GetString("Name"), Dpi.px 200)
         tree.UseColumns <- true
         tree.Columns.Add(nameColumn)
-        tree.RowHeight <- 24
+        tree.RowHeight <- Dpi.px 24
+        Dpi.scaleTreeViewHeader tree
         tree.Font <- font
         tree.BorderStyle <- BorderStyle.None
         let addCheckBoxColumn colText propName =
             let content = resources.GetString(propName)
             let parentColumn =
-                let col = TreeColumn(content, 120)
+                let col = TreeColumn(content, Dpi.px 120)
                 col.TextAlign <- HorizontalAlignment.Center
                 col
             tree.Columns.Add(parentColumn)
             tree.NodeControls.Add(
-                let control = NodeControls.NodeCheckBox()
+                let control = ScaledNodeCheckBox()
                 control.ParentColumn <- parentColumn
                 control.IsVisibleValueNeeded.Add <| fun e ->
                     let node = tree.GetPath(e.Node).LastNode :?> INode
                     e.Value <- node.showSettings
-                control.LeftMargin <- 50
+                control.LeftMargin <- Dpi.px 50
                 control.EditEnabled <- true
                 control.DataPropertyName <- propName
                 control)
@@ -99,7 +140,7 @@ type ProgramView() as this=
         tree.NodeControls.Add(
             let control = NodeControls.NodeIcon()
             control.ParentColumn <- nameColumn
-            control.LeftMargin <- 3
+            control.LeftMargin <- Dpi.px 3
             control.DataPropertyName <- "Icon"
             control)
         tree.NodeControls.Add(
@@ -108,7 +149,7 @@ type ProgramView() as this=
             control.DisplayHiddenContentInToolTip <- true
             control.ParentColumn <- nameColumn
             control.DataPropertyName <- "Text"
-            control.LeftMargin <- 3
+            control.LeftMargin <- Dpi.px 3
             control)
         tree.Model <- model
         tree,model

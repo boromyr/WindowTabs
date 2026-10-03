@@ -33,6 +33,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     let visibleCell = Cell.create(false)
     let transparentCell = Cell.create(true)
     let showInsideCell = Cell.create(false)
+    let inTitleBarCell = Cell.create(false)
     let isInAltTabCell = Cell.create(false)
     let iconOnlyCell = Cell.create(false)
     let alignmentMap = 
@@ -102,7 +103,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
                     TabDisplayInfo.text = ti.text
                     icon = ti.iconSmall
                     textFont = 
-                        let font = SystemFonts.MenuFont
+                        let font = Dpi.font SystemFonts.MenuFont
                         if ti.isRenamed then Font(font, FontStyle.Italic) else font
                     textBrush = SystemBrushes.MenuText
                 }
@@ -120,7 +121,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             transparent = this.transparent
             appearance = 
                 if this.isIconOnly then
-                    { this.appearance with tabMaxWidth = 50 }
+                    { this.appearance with tabMaxWidth = Dpi.px 50 }
                 else
                     this.appearance
         }
@@ -213,7 +214,9 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     
     member private this.update() = 
         if this.visible then 
-            this.window.update(this.render, this.location, this.alpha)
+            // fading would let the title bar underneath show through
+            let alpha = if inTitleBarCell.value then byte(0xFF) else this.alpha
+            this.window.update(this.render, this.location, alpha)
             GC.Collect()
         else this.window.hide()
     
@@ -341,6 +344,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
 
     member this.setPlacement(placement) =
         showInsideCell.set(placement.showInside)
+        inTitleBarCell.set(placement.inTitleBar)
         sizeCell.set(placement.bounds.size)
         locationCell.set(placement.bounds.location)   
      

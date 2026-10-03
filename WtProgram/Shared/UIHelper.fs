@@ -249,14 +249,17 @@ module UIHelper =
             //t.Padding <- Padding(10)
             t.RowCount <- fields.length
             t.ColumnCount <- 2
-            // Make control align right
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10f)) |> ignore
+            // Fixed proportions keep the controls of different forms (e.g. group boxes) in one column
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70f)) |> ignore
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30f)) |> ignore
             t
 
         fields.enumerate.iter <| fun (i,(text, control:Control)) ->
             let caption = resources.GetString text
             let label = label caption
             control.Dock <- DockStyle.Fill
+            // fill the row so the text is vertically centred like the control next to it
+            label.Dock <- DockStyle.Fill
             label.Margin <- Padding(0,5,0,5)
             panel.Controls.Add(label)
             panel.Controls.Add(control)
