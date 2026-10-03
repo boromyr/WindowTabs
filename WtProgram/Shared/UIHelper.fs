@@ -5,6 +5,7 @@ open System.Drawing.Text
 open System.Windows.Forms
 open Aga.Controls.Tree
 open Bemo.Win32
+open Bemo.Win32.Forms
 
 [<AllowNullLiteral>]
 type INode =
@@ -49,33 +50,50 @@ type ScaledPlusMinus() =
     // don't let a double click on the glyph also toggle the node
     override this.MouseDoubleClick(args) = args.Handled <- true
 
+module internal UIText =
+    let private resources = new System.Resources.ResourceManager("Properties.Resources", System.Reflection.Assembly.GetExecutingAssembly())
+    let get (key:string) =
+        match resources.GetString(key) with
+        | null -> key
+        | value -> value
+
 type IntEditor() =
-    let control = 
-        let control = NumericUpDown()
-        control.Minimum <- decimal(1)
-        control.Maximum <- decimal(1000)
+    let control =
+        let control = FluentNumberBox()
+        control.Minimum <- 1
+        control.Maximum <- 1000
+        control.Font <- FluentTheme.Body
+        control.Size <- Size(Dpi.px 120, Dpi.px 32)
         control.Margin <- Padding(0)
         control
     interface IPropEditor with
-        member x.value 
-            with get() = box(int(control.Value))
-            and set(newValue) = control.Value <- decimal(unbox<int>(newValue))
+        member x.value
+            with get() = box(control.Value)
+            and set(newValue) = control.Value <- unbox<int>(newValue)
         member x.control = control :> Control
         member x.changed = control.ValueChanged |> Event.map ignore
 
 type TextEditor() =
-    let control = 
-        let control = TextBox()
+    let control =
+        let control = FluentTextBox()
+        control.Font <- FluentTheme.Body
+        control.Size <- Size(Dpi.px 240, Dpi.px 32)
         control
     interface IPropEditor with
-        member x.value 
+        member x.value
             with get() = box(control.Text)
             and set(newValue) = control.Text <- unbox<string>(newValue)
         member x.control = control :> Control
         member x.changed = control.TextChanged |> Event.map ignore
 
 type BoolEditor() =
-    let control = CheckBox()
+    let control =
+        let toggle = FluentToggle()
+        toggle.Font <- FluentTheme.Body
+        toggle.OnText <- UIText.get "On"
+        toggle.OffText <- UIText.get "Off"
+        toggle.Size <- toggle.GetPreferredSize(Size.Empty)
+        toggle
     interface IPropEditor with
         member x.value
             with get() = box(control.Checked)
@@ -84,7 +102,11 @@ type BoolEditor() =
         member x.changed = control.CheckedChanged |> Event.map ignore
 
 type EnumEditor<'e when 'e :> Enum>() as this =
-    let control = ComboBox()
+    let control =
+        let combo = FluentComboBox()
+        combo.Font <- FluentTheme.Body
+        combo.Width <- Dpi.px 200
+        combo
     let mutable cachedValue = null
     do this.init()
 
@@ -111,31 +133,24 @@ type EnumEditor<'e when 'e :> Enum>() as this =
 
 type ColorEditor() as this =
     let changedEvent = Event<_>()
-    let chooserButton = 
-        let btn = Button()
-        btn.Width <- btn.Height
-        btn.Click.Add <| fun _ -> 
-            let dlg = System.Windows.Forms.ColorDialog()
-            dlg.Color <- this.color
-            dlg.FullOpen <- true
-            dlg.ShowHelp <- false
-            if dlg.ShowDialog() = DialogResult.OK then
-                (this :> IPropEditor).value <- dlg.Color
-                changedEvent.Trigger()
-        btn.Padding <- Padding(0)
-        btn.Margin <- Padding(0)
-        btn.Dock <- DockStyle.Right
-        btn
-        
-    let textBox = 
-        let tb = TextBox()
+    // hex text box with the colour sample (which opens the colour picker) inside it
+    let fluentTextBox =
+        let box = FluentColorBox()
+        box.Font <- FluentTheme.Body
+        box.Size <- Size(Dpi.px 140, Dpi.px 32)
+        box.Margin <- Padding(0)
+        box.ColorChanged.Add <| fun _ ->
+            (this :> IPropEditor).value <- box.Color
+            changedEvent.Trigger()
+        box
+
+    let textBox =
+        let tb = fluentTextBox.Inner
         let maxLen = 6
         let save() =
             (this :> IPropEditor).value <- this.colorFromTb
             changedEvent.Trigger()
-        tb.Dock <- DockStyle.Fill
         tb.CharacterCasing <- CharacterCasing.Upper
-        tb.Margin <- Padding(0)
         tb.KeyPress.Add <| fun e ->
             try
                 if e.KeyChar = (char)Keys.Enter then
@@ -153,51 +168,39 @@ type ColorEditor() as this =
             with ex -> 
                 e.Cancel <- true
                 tb.SelectAll()
-                MessageBox.Show("Invalid color value, must be a six digit hexadecimal number.").ignore
+                MessageBox.Show(UIText.get "InvalidColor").ignore
 
         tb.Validated.Add <| fun e -> save()
         tb
 
-    let panel = 
-        let panel = TableLayoutPanel()
-        panel.GrowStyle <- TableLayoutPanelGrowStyle.FixedSize
-        panel.RowCount <- 1
-        panel.ColumnCount <- 2
-        panel.RowStyles.Add(RowStyle(SizeType.Absolute, 25.0f)).ignore
-        panel.ColumnStyles.Add(ColumnStyle(SizeType.Percent, 0.9f)).ignore
-        panel.ColumnStyles.Add(ColumnStyle(SizeType.Absolute, 25.0f)).ignore
-        panel.AutoSize <- true
-        panel.Padding <- Padding(0)
-        panel.Margin <- Padding(0)
-        panel.Controls.Add(textBox)
-        panel.Controls.Add(chooserButton)
-        panel.SetRow(textBox, 0)
-        panel.SetColumn(textBox, 0)
-        panel.SetRow(chooserButton, 0)
-        panel.SetColumn(chooserButton, 1)
-        panel
+
     member this.colorFromTb =
         let text = textBox.Text
         let value = Int32.Parse(text, Globalization.NumberStyles.HexNumber)
         Color.FromRGB(value)
 
-    member this.color = chooserButton.BackColor
+    member this.color = fluentTextBox.Color
     interface IPropEditor with
-        member x.value 
-            with get() = 
+        member x.value
+            with get() =
                 let text = textBox.Text
                 let value = Int32.Parse(text, Globalization.NumberStyles.HexNumber)
                 box(Color.FromRGB(value))
-            and set(newColor) = 
+            and set(newColor) =
                 let color = unbox<Color>(newColor)
-                chooserButton.BackColor <- color
-                textBox.Text <- sprintf "%X" (color.ToRGB())
-        member x.control = panel :> Control
+                fluentTextBox.Color <- color
+                textBox.Text <- sprintf "%06X" (color.ToRGB())
+        member x.control = fluentTextBox :> Control
         member x.changed = changedEvent.Publish
 
 
 type HotKeyEditor() =
-    let control = HotKeyControl()
+    let control =
+        let box = FluentHotKeyBox()
+        box.NoneText <- UIText.get "HotKeyNone"
+        box.Font <- FluentTheme.Body
+        box.Size <- Size(Dpi.px 200, Dpi.px 32)
+        box
     interface IPropEditor with
         member x.value 
             with get() = box(control.HotKey)
@@ -293,9 +296,12 @@ module UIHelper =
             t
 
         fields.enumerate.iter <| fun (i,(text, control:Control)) ->
-            let caption = resources.GetString text
+            let caption = UIText.get text
             let label = label caption
+            label.ForeColor <- FluentTheme.Text
+            label.Anchor <- AnchorStyles.Left
             control.Dock <- DockStyle.Fill
+            control.Margin <- Padding(Dpi.px 12, Dpi.px 4, 0, Dpi.px 4)
             label.Margin <- Padding(0,5,0,5)
             panel.Controls.Add(label)
             panel.Controls.Add(control)
@@ -336,16 +342,22 @@ module UIHelper =
         t  
 
     let okCancelForm control =
-        let form = Form()
-        form.Padding <- Padding(12)
-        
-        let okButton = Button()
+        let form = new FluentForm()
+        form.Padding <- Padding(Dpi.px 16)
+        form.FormBorderStyle <- FormBorderStyle.FixedDialog
+        form.MinimizeBox <- false
+        form.MaximizeBox <- false
+
+        let okButton = FluentButton()
         okButton.Text <- "OK"
+        okButton.Accent <- true
+        okButton.Margin <- Padding(0, 0, Dpi.px 8, 0)
         okButton.Click.Add <| fun _ ->
             form.DialogResult <- DialogResult.OK
 
-        let cancelButton = Button()
-        cancelButton.Text <- "Cancel"
+        let cancelButton = FluentButton()
+        cancelButton.Text <- UIText.get "Cancel"
+        cancelButton.Margin <- Padding(0)
         
         cancelButton.Click.Add <| fun _ ->
             form.DialogResult <- DialogResult.Cancel
@@ -353,8 +365,11 @@ module UIHelper =
         let buttonPanel = hbox (List2([okButton.cast<Control>(); cancelButton.cast<Control>()]))
         let vboxLayout = vbox (List2([control; buttonPanel.cast<Control>()]))
         vboxLayout.RowStyles.Item(0).SizeType <- SizeType.AutoSize
-        vboxLayout.RowStyles.Item(1).SizeType <- SizeType.Absolute
+        vboxLayout.RowStyles.Item(1).SizeType <- SizeType.AutoSize
         buttonPanel.Anchor <- AnchorStyles.Bottom ||| AnchorStyles.Right
+        buttonPanel.Margin <- Padding(0, Dpi.px 16, 0, 0)
         vboxLayout.Dock <- DockStyle.Fill
         form.Controls.Add(vboxLayout)
+        form.AcceptButton <- okButton
+        form.CancelButton <- cancelButton
         form

@@ -1,197 +1,85 @@
-﻿namespace Bemo
+namespace Bemo
 open System
 open System.Drawing
 open System.IO
 open System.Windows.Forms
 open Bemo.Win32.Forms
-open Aga.Controls
-open Aga.Controls.Tree
 open System.Resources
 open System.Reflection
 
-module ImgHelper =
-    let imgFromIcon (icon:Icon) =
-        let img =
-            try
-                icon.ToBitmap().img
-            with _ ->
-                SystemIcons.Application.ToBitmap().img
-        img.resize(Sz(Dpi.px 16, Dpi.px 16)).bitmap :> Image
-
-// NodeCheckBox draws a fixed 13px glyph, which is tiny on scaled displays;
-// draw a vector check box at the display's size instead.
-type ScaledNodeCheckBox() =
-    inherit NodeControls.NodeCheckBox()
-
-    member private this.boxSize = Dpi.px NodeControls.NodeCheckBox.ImageSize
-
-    override this.MeasureSize(node, context) = Size(this.boxSize, this.boxSize)
-
-    override this.Draw(node, context) =
-        let bounds = this.GetBounds(node, context)
-        let size = float32(this.boxSize) - 1.0f
-        let box = RectangleF(float32(bounds.X) + 0.5f, float32(bounds.Y) + 0.5f, size, size)
-        let g = context.Graphics
-        let oldMode = g.SmoothingMode
-        g.SmoothingMode <- Drawing2D.SmoothingMode.AntiAlias
-        use path = new Drawing2D.GraphicsPath()
-        let d = size / 4.0f
-        path.AddArc(box.X, box.Y, d, d, 180.0f, 90.0f)
-        path.AddArc(box.Right - d, box.Y, d, d, 270.0f, 90.0f)
-        path.AddArc(box.Right - d, box.Bottom - d, d, d, 0.0f, 90.0f)
-        path.AddArc(box.X, box.Bottom - d, d, d, 90.0f, 90.0f)
-        path.CloseFigure()
-        match this.GetCheckState(node) with
-        | CheckState.Unchecked ->
-            use pen = new Pen(SystemColors.GrayText, float32(Dpi.px 1))
-            g.DrawPath(pen, path)
-        | state ->
-            use fill = new SolidBrush(SystemColors.Highlight)
-            g.FillPath(fill, path)
-            use mark = new Pen(SystemColors.HighlightText, float32(Dpi.px 2))
-            if state = CheckState.Checked then
-                g.DrawLines(mark, [|
-                    PointF(box.X + size * 0.25f, box.Y + size * 0.52f)
-                    PointF(box.X + size * 0.43f, box.Y + size * 0.70f)
-                    PointF(box.X + size * 0.75f, box.Y + size * 0.32f) |])
-            else
-                g.DrawLine(mark, box.X + size * 0.28f, box.Y + size * 0.5f, box.X + size * 0.72f, box.Y + size * 0.5f)
-        g.SmoothingMode <- oldMode
-
-
-type ExeNode(procPath) =
-    inherit Node(Path.GetFileName(procPath))
-    let icon = 
-        let procIcon = Win32Helper.GetFileIcon(procPath)
-        ImgHelper.imgFromIcon (Ico.fromHandle(procIcon).def(System.Drawing.SystemIcons.Application))
-    let mutable _enableTabs = Services.filter.getIsTabbingEnabledForProcess(procPath)
-    let mutable _enableAutoGrouping = Services.program.getAutoGroupingEnabled(procPath)
-    member this.Icon with get() = icon 
-    member this.enableTabs 
-        with get() = _enableTabs 
-        and set(newValue) = 
-            _enableTabs <- newValue
-            Services.filter.setIsTabbingEnabledForProcess procPath _enableTabs
-    member this.enableAutoGrouping
-        with get() = _enableAutoGrouping
-        and set(newValue) =
-            _enableAutoGrouping <- newValue
-            Services.program.setAutoGroupingEnabled procPath _enableAutoGrouping
-           
-    interface INode with
-        member x.showSettings = true
-
-type WindowNode(window:Window) =
-    inherit Node(window.text)
-    let icon = ImgHelper.imgFromIcon window.iconSmall
-    member this.Icon with get() = icon 
-    interface INode with
-        member x.showSettings = false
-
-type ProgramView() as this=
+type ProgramView() as this =
     let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
-    let font = Font(resources.GetString("Font"), 10f)
 
     let invoker = InvokerService.invoker
-    let toolBar = 
-        let ts = ToolStrip()
-        ts.GripStyle  <- ToolStripGripStyle.Hidden
-        let refreshBtn = 
-            let btn = ToolStripButton(resources.GetString("Refresh"))
-            btn.Click.Add <| fun _ -> this.populateNodes()
-            btn
-        ts.Items.Add(refreshBtn).ignore
-        ts.Font <- font
-        ts
-    let statusBar = 
-        let sb = StatusBar()
-        sb.Text <- "Ready"
-        sb.Font <- font
-        sb
-    let tree,model = 
-        let tree = TreeViewAdv()
-        let model = TreeModel()
-        let nameColumn = TreeColumn(resources.GetString("Name"), Dpi.px 200)
-        tree.UseColumns <- true
-        tree.Columns.Add(nameColumn)
-        tree.RowHeight <- Dpi.px 24
-        Dpi.scaleTreeViewHeader tree
-        tree.Font <- font
-        tree.BorderStyle <- BorderStyle.None
-        let addCheckBoxColumn colText propName =
-            let content = resources.GetString(propName)
-            let parentColumn =
-                let col = TreeColumn(content, Dpi.px 120)
-                col.TextAlign <- HorizontalAlignment.Center
-                col
-            tree.Columns.Add(parentColumn)
-            tree.NodeControls.Add(
-                let control = ScaledNodeCheckBox()
-                control.ParentColumn <- parentColumn
-                control.IsVisibleValueNeeded.Add <| fun e ->
-                    let node = tree.GetPath(e.Node).LastNode :?> INode
-                    e.Value <- node.showSettings
-                control.LeftMargin <- Dpi.px 50
-                control.EditEnabled <- true
-                control.DataPropertyName <- propName
-                control)
-        addCheckBoxColumn "Tabs" "enableTabs"
-        addCheckBoxColumn "Auto Grouping" "enableAutoGrouping"
-        tree.NodeControls.Add(
-            let control = NodeControls.NodeIcon()
-            control.ParentColumn <- nameColumn
-            control.LeftMargin <- Dpi.px 3
-            control.DataPropertyName <- "Icon"
-            control)
-        tree.NodeControls.Add(
-            let control = SmoothNodeTextBox()
-            control.Trimming <- StringTrimming.EllipsisCharacter
-            control.DisplayHiddenContentInToolTip <- true
-            control.ParentColumn <- nameColumn
-            control.DataPropertyName <- "Text"
-            control.LeftMargin <- Dpi.px 3
-            control)
-        ScaledPlusMinus.attach tree nameColumn
-        tree.Model <- model
-        tree,model
-    let panel = 
-        let panel = Panel()
-        toolBar.Dock <- DockStyle.Top
-        tree.Dock <- DockStyle.Fill
-        statusBar.Dock <- DockStyle.Bottom
-        panel.Controls.Add(tree)
-        panel.Controls.Add(toolBar)
-        panel.Controls.Add(statusBar)
-        panel
 
-    do  
+    let status =
+        let label = FluentUI.secondaryLabel (FluentUI.text "Ready")
+        label.Anchor <- AnchorStyles.Left
+        label.Margin <- Padding(Dpi.px 4, Dpi.px 8, 0, 0)
+        label
+
+    let list =
+        let list = FluentUI.stack []
+        list.Margin <- Padding(0, Dpi.px 12, 0, 0)
+        list
+
+    let programIcon (procPath:string) =
+        let procIcon = Win32Helper.GetFileIcon(procPath)
+        let icon = Ico.fromHandle(procIcon).def(SystemIcons.Application)
+        try icon.ToBitmap() :> Image with _ -> SystemIcons.Application.ToBitmap() :> Image
+
+    let programCard (procPath:string) (windowCount:int) (icon:Image) =
+        let description = if windowCount = 1 then FluentUI.text "OneWindow" else String.Format(FluentUI.text "WindowCount", windowCount)
+        // both check boxes in one window: window creation is the expensive part of building the list
+        let checks = new FluentCheckGroup()
+        checks.Font <- FluentTheme.Body
+        checks.AutoSize <- true
+        checks.AddItem(resources.GetString "enableTabs", Services.filter.getIsTabbingEnabledForProcess procPath)
+        checks.AddItem(resources.GetString "enableAutoGrouping", Services.program.getAutoGroupingEnabled procPath)
+        checks.CheckedChanged.Add <| fun index ->
+            let value = checks.IsChecked(index)
+            if index = 0 then Services.filter.setIsTabbingEnabledForProcess procPath value
+            else Services.program.setAutoGroupingEnabled procPath value
+        FluentUI.settingCardWithIcon (Some icon) (Path.GetFileName(procPath)) (Some description) checks
+    let refreshButton = FluentUI.button (Some "") (resources.GetString("Refresh")) (fun () -> this.populateNodes())
+
+    let page =
+        FluentUI.page (resources.GetString "Programs") [
+            FluentUI.row [refreshButton; status]
+            list
+        ]
+
+    do
         this.populateNodes()
         Services.settings.notifyValue "enableTabbingByDefault" <| fun(_) ->
             this.populateNodes()
 
+    member this.refresh() = this.populateNodes()
+
     member private this.populateNodes() =
-        model.Nodes.Clear()
+        refreshButton.Enabled <- false
+        status.Text <- FluentUI.text "Scanning"
         ThreadHelper.queueBackground <| fun() ->
             let os = OS()
             let procs = Services.program.appWindows.fold (Map2()) <| fun procs hwnd ->
-                invoker.asyncInvoke <| fun() ->
-                    statusBar.Text <- sprintf "Scanning window 0x%x" hwnd
                 let window = os.windowFromHwnd(hwnd)
                 let procPath = window.pid.processPath
-                procs.add procPath (procs.tryFind(procPath).def(List2()).append(window))
-            let procNodes = procs.items.map <| fun (procPath, windows) ->
-                let procNode = ExeNode(procPath)
-                windows.iter <| fun window ->
-                    let windowNode = WindowNode(window)
-                    procNode.Nodes.Add(windowNode)
-                procNode
-            
+                procs.add procPath (procs.tryFind(procPath).def(0) + 1)
+            let programs = procs.items.sortBy(fun (procPath, _) -> Path.GetFileName(procPath).ToLowerInvariant())
+            let programs = programs.map(fun (procPath, count) -> procPath, count, programIcon procPath)
+
             invoker.asyncInvoke <| fun() ->
-                model.Nodes.Clear()
-                procNodes.sortBy(fun n -> n.Text).iter <| fun node -> model.Nodes.Add(node)
-                statusBar.Text <- "Ready"
+                list.SuspendLayout()
+                let old = list.Controls |> Seq.cast<Control> |> List.ofSeq
+                list.Controls.Clear()
+                old |> List.iter (fun control -> control.Dispose())
+                programs.iter <| fun (procPath, count, icon) ->
+                    list.Controls.Add(programCard procPath count icon)
+                list.ResumeLayout()
+                status.Text <- FluentUI.text "Ready"
+                refreshButton.Enabled <- true
 
     interface ISettingsView with
         member x.key = SettingsViewType.ProgramSettings
         member x.title = resources.GetString "Programs"
-        member x.control = panel :> Control
+        member x.control = page

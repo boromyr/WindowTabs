@@ -1,4 +1,4 @@
-﻿namespace Bemo
+namespace Bemo
 open System
 open System.Drawing
 open System.IO
@@ -7,90 +7,138 @@ open Bemo.Win32.Forms
 open System.Resources
 open System.Reflection
 
-module DarkTheme =
-    let isDark() =
-        try
-            match Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", box 1) with
-            | :? int as v -> v = 0
-            | _ -> false
-        with _ -> false
-    let back = Color.FromArgb(32, 32, 32)
-    let inputBack = Color.FromArgb(45, 45, 45)
-    let fore = Color.FromArgb(230, 230, 230)
-
-    let rec apply (c:Control) =
-        match c with
-        | :? TextBox | :? NumericUpDown | :? ComboBox -> c.BackColor <- inputBack
-        | :? Button as b ->
-            b.BackColor <- inputBack
-            b.FlatStyle <- FlatStyle.Flat
-        | _ -> c.BackColor <- back
-        c.ForeColor <- fore
-        match c with
-        | :? ToolStrip as ts ->
-            ts.RenderMode <- ToolStripRenderMode.System
-            ts.BackColor <- back
-            ts.ForeColor <- fore
-            for item in ts.Items do
-                item.ForeColor <- fore
-        | _ -> ()
-        for child in c.Controls do apply child
-
+/// The settings window, laid out like the Windows 11 Settings app:
+/// navigation on the left, the selected page on the right.
+///
+/// Creating native windows is the slow part of showing a page, so pages are built once and then
+/// only shown or hidden, the ones not opened yet are prepared in the background after the window
+/// appears, and closing the window just hides it.
 type DesktopManagerForm() =
-    let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
-    let title = sprintf "WindowTabs Settings (version %s)"  (Services.program.version)
-    let tabs = List2([
-        ProgramView() :> ISettingsView
-        AppearanceView() :> ISettingsView
-        HotKeyView() :> ISettingsView
-        WorkspaceView() :> ISettingsView
-        DiagnosticsView() :> ISettingsView
+    // Segoe Fluent Icons glyph, title key and constructor of each page
+    let pageInfo = List2([
+        ("", "Programs", SettingsViewType.ProgramSettings, fun () -> ProgramView() :> ISettingsView)
+        ("", "Appearance", SettingsViewType.AppearanceSettings, fun () -> AppearanceView() :> ISettingsView)
+        ("", "Behavior", SettingsViewType.HotKeySettings, fun () -> HotKeyView() :> ISettingsView)
+        ("", "Workspace", SettingsViewType.LayoutSettings, fun () -> WorkspaceView() :> ISettingsView)
+        ("", "Diagnostics", SettingsViewType.DiagnosticsSettings, fun () -> DiagnosticsView() :> ISettingsView)
         ])
-    let tabControl : TabControl = {
-        new TabControl() with
-            override this.OnKeyDown(e:KeyEventArgs) =
-                if (e.KeyData = (Keys.Control ||| Keys.PageDown) ||
-                    e.KeyData = (Keys.Control  ||| Keys.PageUp)) then
-                    ()
-                else
-                    base.OnKeyDown(e)
-        }
-    let font = Font(resources.GetString("Font"), 10f)
 
-    let form = 
-        let form = Form()
-        tabs.iter <| fun view ->
-            let page = TabPage(view.title)
-            let control = view.control
-            control.Dock <- DockStyle.Fill
-            page.Controls.Add(control)
+    let views : ISettingsView option array = Array.create pageInfo.length None
+    let pages : Control option array = Array.create pageInfo.length None
+
+    let content =
+        let panel = Panel()
+        panel.Dock <- DockStyle.Fill
+        panel.BackColor <- FluentTheme.Background
+        panel
+
+    let createPage index =
+        match pages.[index] with
+        | Some(page) -> page
+        | None ->
+            let (_, _, _, create) = pageInfo.at(index)
+            let view = create()
+            let page = view.control
             page.Dock <- DockStyle.Fill
-            page.Font <- font
-            tabControl.TabPages.Add(page)
-            page.BackColor <- Color.White
-        tabControl.Dock <- DockStyle.Fill
-        form.Controls.Add(tabControl)
-        form.FormBorderStyle <- FormBorderStyle.SizableToolWindow
+            page.Visible <- false
+            content.Controls.Add(page)
+            // lay the page out while it has no window handles: moving controls is cheap then,
+            // and they get created directly at their final position
+            page.Bounds <- content.ClientRectangle
+            page.PerformLayout()
+            views.[index] <- Some(view)
+            pages.[index] <- Some(page)
+            page
+
+    let showPage index =
+        let page = createPage index
+        page.Visible <- true
+        page.BringToFront()
+        pages |> Array.iteri (fun i other ->
+            if i <> index then other |> Option.iter (fun other -> other.Visible <- false))
+
+    /// Builds the pages not opened yet, one per timer tick so the window stays responsive.
+    /// Each is shown once behind the current page, which creates its windows, then hidden again.
+    let prepareRemainingPages() =
+        let timer = new Timer()
+        timer.Interval <- 50
+        timer.Tick.Add <| fun _ ->
+            match pages |> Array.tryFindIndex Option.isNone with
+            | Some(index) ->
+                let page = createPage index
+                page.SendToBack()
+                page.Visible <- true
+                page.Visible <- false
+            | None ->
+                timer.Stop()
+                timer.Dispose()
+        timer.Start()
+
+    let nav =
+        let nav = FluentNavList()
+        nav.Dock <- DockStyle.Fill
+        nav.Font <- FluentTheme.Body
+        pageInfo.iter <| fun (glyph, titleKey, _, _) -> nav.AddItem(glyph, FluentUI.text titleKey)
+        nav.SelectedIndexChanged.Add <| fun _ -> showPage nav.SelectedIndex
+        nav
+
+    let sidebar =
+        let panel = Panel()
+        panel.Dock <- DockStyle.Left
+        panel.Width <- Dpi.px 280
+        panel.BackColor <- FluentTheme.Background
+        panel.Padding <- Padding(Dpi.px 12, Dpi.px 16, Dpi.px 8, Dpi.px 16)
+
+        let name = FluentUI.label "WindowTabs"
+        name.Font <- FluentTheme.Subtitle
+        name.AutoSize <- false
+        name.Dock <- DockStyle.Top
+        name.Height <- Dpi.px 52
+        name.Padding <- Padding(Dpi.px 16, 0, 0, Dpi.px 12)
+        name.TextAlign <- ContentAlignment.MiddleLeft
+
+        panel.Controls.Add(nav)
+        panel.Controls.Add(name)
+        panel
+
+    let form =
+        let form = new FluentForm()
+        form.SuspendLayout()
+        form.Controls.Add(content)
+        form.Controls.Add(sidebar)
         form.StartPosition <- FormStartPosition.CenterScreen
-        form.Size <- Size(800, 600)
-        form.Text <- title
+        form.ClientSize <- Size(Dpi.px 1000, Dpi.px 700)
+        form.MinimumSize <- Size(Dpi.px 760, Dpi.px 520)
+        form.Text <- FluentUI.text "SettingsTitle"
         form.Icon <- Services.openIcon("Bemo.ico")
-        form.Font <- font
-        form.BackColor <- Color.White
-        // The layout uses 96-DPI pixel sizes while fonts already follow the display DPI,
-        // so scale the geometry to match (TableLayoutPanels scale their absolute rows too).
-        form.Scale(SizeF(float32(Dpi.scale()), float32(Dpi.scale())))
-        if DarkTheme.isDark() then
-            DarkTheme.apply form
+        form.ResumeLayout()
+        // keep the window (and its pages) for the next time it is opened
+        // (a WM_CLOSE sent by another program arrives with CloseReason.None, so only let the
+        // window really close when WindowTabs or Windows is shutting down)
+        form.FormClosing.Add <| fun e ->
+            match e.CloseReason with
+            | CloseReason.ApplicationExitCall
+            | CloseReason.WindowsShutDown
+            | CloseReason.TaskManagerClosing -> ()
+            | _ ->
+                e.Cancel <- true
+                form.Hide()
+        form.Shown.Add <| fun _ -> prepareRemainingPages()
         form
 
     member this.show() =
-        form.Show()
-        form.Activate()
+        if nav.SelectedIndex < 0 then nav.SelectedIndex <- 0
+        if form.Visible.not then
+            // reopening a hidden window: the list of programs may have changed meanwhile
+            if form.IsHandleCreated then
+              views |> Array.iter (function
+                | Some(:? ProgramView as programs) -> programs.refresh()
+                | _ -> ())
+            form.Show()
+        form.BringToForeground()
+
+    member this.isDisposed = form.IsDisposed
 
     member this.showView(view) =
-        let tabIndex = tabs.findIndex(fun tab -> tab.key = view)
-        tabControl.SelectedIndex <- tabIndex
-        form.Show()
-        form.Activate()
-        
+        nav.SelectedIndex <- pageInfo.findIndex(fun (_, _, key, _) -> key = view)
+        this.show()

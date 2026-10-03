@@ -1,4 +1,4 @@
-﻿namespace Bemo
+namespace Bemo
 open System
 open System.Drawing
 open System.IO
@@ -11,63 +11,45 @@ open System.Reflection
 
 type DiagnosticsView() as this =
     let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
-    let font = Font(resources.GetString("Font"), 10f)
 
     let textBox =
         let tb = TextBox()
         tb.ReadOnly <- true
         tb.Multiline <- true
         tb.ScrollBars <- ScrollBars.Both
-        tb.Dock <- DockStyle.Fill
-        tb.Font <- font
+        tb.WordWrap <- false
+        tb.BorderStyle <- BorderStyle.None
+        tb.BackColor <- FluentTheme.Card
+        tb.ForeColor <- FluentTheme.Text
+        tb.Font <- FluentTheme.Mono
+        FluentTheme.UseDarkScrollBars(tb)
         tb
-    let toolBar = 
-        let ts = ToolStrip()
-        ts.GripStyle  <- ToolStripGripStyle.Hidden
-        ts.Dock <- DockStyle.Top
-        let refreshBtn = 
-            let btn = ToolStripButton("Scan")
-            btn.Click.Add <| fun _ -> this.doRefresh()
-            btn
-        let copyBtn =
-            let btn = ToolStripButton("Copy to clipboard")
-            btn.Click.Add <| fun _ -> 
-                textBox.SelectAll()
-                textBox.Refresh()
-                textBox.Copy()
-                MessageBox.Show("Please paste (CTRL + V) into an email and send to 'support@windowtabs.com'", "Copied to clipboard").ignore
-            btn
-        let copySettingsFileBtn =
-            let btn = ToolStripButton("Copy settings file to WindowTabs.exe path")
-            btn.Click.Add <| fun _ -> 
-                let fileName = "WindowTabsSettings.txt"
-                let settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WindowTabs")
-                let settingsFile = Path.Combine(settingsFolder, fileName)
-                let targetFile = Path.Combine(".", fileName)
-                try
-                    File.Copy(settingsFile, targetFile, false)
-                    MessageBox.Show("Restart WindowTabs.exe to use settings file of the same path", "Copied").ignore
-                with ex ->
-                    MessageBox.Show("Error: copy failed. Details: " + ex.Message, "Copy failed").ignore
-            btn
-        ts.Items.Add(refreshBtn).ignore
-        ts.Items.Add(copyBtn).ignore
-        ts.Items.Add(new ToolStripSeparator()).ignore
-        ts.Items.Add(copySettingsFileBtn).ignore
-        ts.Font <- font
-        ts
-    let statusBar = 
-        let sb = StatusBar()
-        sb.Text <- "Ready"
-        sb.Dock <- DockStyle.Bottom
-        sb.Font <- font
-        sb
-    let panel = 
-        let p = Panel()
-        p.Controls.Add(textBox)
-        p.Controls.Add(toolBar)
-        p.Controls.Add(statusBar)
-        p
+
+    let copyToClipboard() =
+        textBox.SelectAll()
+        textBox.Refresh()
+        textBox.Copy()
+        MessageBox.Show(FluentUI.text "CopiedToClipboardMessage", FluentUI.text "CopiedToClipboard").ignore
+
+    let copySettingsFile() =
+        let fileName = "WindowTabsSettings.txt"
+        let settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WindowTabs")
+        let settingsFile = Path.Combine(settingsFolder, fileName)
+        let targetFile = Path.Combine(".", fileName)
+        try
+            File.Copy(settingsFile, targetFile, false)
+            MessageBox.Show(FluentUI.text "SettingsFileCopiedMessage", FluentUI.text "Copied").ignore
+        with ex ->
+            MessageBox.Show(FluentUI.text "CopyFailedMessage" + " " + ex.Message, FluentUI.text "CopyFailed").ignore
+
+    let toolBar =
+        FluentUI.row [
+            FluentUI.button (Some "") (FluentUI.text "Scan") (fun () -> this.doRefresh())
+            FluentUI.button (Some "") (FluentUI.text "CopyToClipboard") copyToClipboard
+            FluentUI.button (Some "") (FluentUI.text "CopySettingsFile") copySettingsFile
+        ]
+
+    let panel = FluentUI.fillPage (resources.GetString "Diagnostics") [toolBar] textBox
 
     member this.doRefresh() =
         let os = OS()
@@ -101,6 +83,6 @@ type DiagnosticsView() as this =
     interface ISettingsView with
         member x.key = SettingsViewType.DiagnosticsSettings
         member x.title = resources.GetString "Diagnostics"
-        member x.control = panel :> Control
+        member x.control = panel
 
 

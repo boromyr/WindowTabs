@@ -12,7 +12,7 @@
     <!-- not picked up automatically by the F# SDK -->
     <AppConfig>App.config</AppConfig>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <SatelliteResourceLanguages>en;ja-JP</SatelliteResourceLanguages>
+    <SatelliteResourceLanguages>en;ja-JP;it</SatelliteResourceLanguages>
     <WarningLevel>3</WarningLevel>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -47,6 +47,7 @@
     <Compile Include="Shared/Shell.fs" />
     <Compile Include="Shared/Model.fs" />
     <Compile Include="Shared/UIHelper.fs" />
+    <Compile Include="Shared/FluentUI.fs" />
     <Compile Include="HotKeyManager.fs" />
     <Compile Include="DragDropController.fs" />
     <Compile Include="TabStripSprite.fs" />
@@ -93,6 +94,7 @@
     <!-- The code uses ResourceManager("Properties.Resources", ...) -->
     <EmbeddedResource Include="Properties/Resources.resx" ManifestResourceName="Properties.Resources" />
     <EmbeddedResource Include="Properties/Resources.ja-JP.resx" ManifestResourceName="Properties.Resources.ja-JP" />
+    <EmbeddedResource Include="Properties/Resources.it.resx" ManifestResourceName="Properties.Resources.it" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Aga.Controls">

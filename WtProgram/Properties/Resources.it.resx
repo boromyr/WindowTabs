@@ -118,270 +118,270 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Appearance" xml:space="preserve">
-    <value>Appearance</value>
+    <value>Aspetto</value>
   </data>
   <data name="Background Active" xml:space="preserve">
-    <value>Background Active</value>
+    <value>Sfondo scheda attiva</value>
   </data>
   <data name="Background Flash" xml:space="preserve">
-    <value>Background Flash</value>
+    <value>Sfondo scheda lampeggiante</value>
   </data>
   <data name="Background Highlight" xml:space="preserve">
-    <value>Background Highlight</value>
+    <value>Sfondo al passaggio del mouse</value>
   </data>
   <data name="Background Normal" xml:space="preserve">
-    <value>Background Normal</value>
+    <value>Sfondo scheda inattiva</value>
   </data>
   <data name="Behavior" xml:space="preserve">
-    <value>Behavior</value>
+    <value>Comportamento</value>
   </data>
   <data name="Border" xml:space="preserve">
-    <value>Border</value>
+    <value>Bordo</value>
   </data>
   <data name="CloseWindowTabs" xml:space="preserve">
-    <value>Close WindowTabs</value>
+    <value>Chiudi WindowTabs</value>
   </data>
   <data name="combineIconsInTaskbar" xml:space="preserve">
-    <value>Combine icons in taskbar by default</value>
+    <value>Combina le icone nella barra delle applicazioni per impostazione predefinita</value>
   </data>
   <data name="Diagnostics" xml:space="preserve">
-    <value>Diagnostics</value>
+    <value>Diagnostica</value>
   </data>
   <data name="Edit" xml:space="preserve">
-    <value>Edit</value>
+    <value>Modifica</value>
   </data>
   <data name="enableAutoGrouping" xml:space="preserve">
-    <value>Auto Grouping</value>
+    <value>Raggruppamento automatico</value>
   </data>
   <data name="enableTabs" xml:space="preserve">
-    <value>Tabs</value>
+    <value>Schede</value>
   </data>
   <data name="Feedback" xml:space="preserve">
     <value>Feedback...</value>
   </data>
   <data name="groupWindowsInSwitcher" xml:space="preserve">
-    <value>Group windows in WindowTabs task switcher</value>
+    <value>Raggruppa le finestre nel selettore attività di WindowTabs</value>
   </data>
   <data name="enableCtrlNumberHotKey" xml:space="preserve">
-    <value>Enable Ctrl+1, ...Ctrl+9 to activate tab</value>
+    <value>Usa Ctrl+1 ... Ctrl+9 per attivare una scheda</value>
   </data>
   <data name="enableHoverActivate" xml:space="preserve">
-    <value>Enable mouse hover to activate tab</value>
+    <value>Attiva la scheda al passaggio del mouse</value>
   </data>
   <data name="tabsInTitleBar" xml:space="preserve">
-    <value>Show tabs in the window title bar</value>
+    <value>Mostra le schede nella barra del titolo</value>
   </data>
   <data name="enableShiftScroll" xml:space="preserve">
-    <value>Enable Shift+Scroll to switch tabs</value>
+    <value>Usa Maiusc + rotellina per cambiare scheda</value>
   </data>
   <data name="autoHide" xml:space="preserve">
-    <value>Auto hide tab when maximized</value>
+    <value>Nascondi le schede quando la finestra è massimizzata</value>
   </data>
   <data name="alignment" xml:space="preserve">
-    <value>Align tabs</value>
+    <value>Allineamento schede</value>
   </data>
   <data name="Height" xml:space="preserve">
-    <value>Height</value>
+    <value>Altezza</value>
   </data>
   <data name="hideInactiveTabs" xml:space="preserve">
-    <value>Fade out tabs on inactive windows</value>
+    <value>Attenua le schede delle finestre inattive</value>
   </data>
   <data name="Indent Flipped" xml:space="preserve">
-    <value>Indent Flipped</value>
+    <value>Rientro (schede dentro la finestra)</value>
   </data>
   <data name="Indent Normal" xml:space="preserve">
-    <value>Indent Normal</value>
+    <value>Rientro (schede sopra la finestra)</value>
   </data>
   <data name="isTabbingEnabledForAllProcessesByDefault" xml:space="preserve">
-    <value>Enable tabs for all programs by default</value>
+    <value>Abilita le schede per tutti i programmi per impostazione predefinita</value>
   </data>
   <data name="MatchType" xml:space="preserve">
-    <value>Match Type</value>
+    <value>Tipo di corrispondenza</value>
   </data>
   <data name="Max Width" xml:space="preserve">
-    <value>Max Width</value>
+    <value>Larghezza massima</value>
   </data>
   <data name="Text Color" xml:space="preserve">
-    <value>Color</value>
+    <value>Colore del testo</value>
   </data>
   <data name="Name" xml:space="preserve">
-    <value>Name</value>
+    <value>Nome</value>
   </data>
   <data name="New" xml:space="preserve">
-    <value>New</value>
+    <value>Nuovo</value>
   </data>
   <data name="nextTab" xml:space="preserve">
-    <value>Next Tab</value>
+    <value>Scheda successiva</value>
   </data>
   <data name="Overlap" xml:space="preserve">
-    <value>Overlap</value>
+    <value>Sovrapposizione</value>
   </data>
   <data name="prevTab" xml:space="preserve">
-    <value>Previous Tab</value>
+    <value>Scheda precedente</value>
   </data>
   <data name="Programs" xml:space="preserve">
-    <value>Programs</value>
+    <value>Programmi</value>
   </data>
   <data name="Refresh" xml:space="preserve">
-    <value>Refresh</value>
+    <value>Aggiorna</value>
   </data>
   <data name="Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>Rimuovi</value>
   </data>
   <data name="replaceAltTab" xml:space="preserve">
-    <value>Replace ALT+TAB with WindowTabs task switcher</value>
+    <value>Sostituisci ALT+TAB con il selettore attività di WindowTabs</value>
   </data>
   <data name="Reset" xml:space="preserve">
-    <value>Reset</value>
+    <value>Predefinito</value>
   </data>
   <data name="DarkMode" xml:space="preserve">
-    <value>Dark Mode</value>
+    <value>Modalità scura</value>
   </data>
   <data name="DarkModeBlue" xml:space="preserve">
-    <value>Dark Mode (Blue)</value>
+    <value>Modalità scura (blu)</value>
   </data>
   <data name="Restore" xml:space="preserve">
-    <value>Restore</value>
+    <value>Ripristina</value>
   </data>
   <data name="runAtStartup" xml:space="preserve">
-    <value>Run WindowTabs at startup</value>
+    <value>Avvia WindowTabs all'accesso a Windows</value>
   </data>
   <data name="Settings" xml:space="preserve">
-    <value>Settings...</value>
+    <value>Impostazioni...</value>
   </data>
   <data name="Title" xml:space="preserve">
-    <value>Title</value>
+    <value>Titolo</value>
   </data>
   <data name="Workspace" xml:space="preserve">
-    <value>Workspace</value>
+    <value>Area di lavoro</value>
   </data>
   <data name="Font" xml:space="preserve">
     <value>Segoe UI</value>
   </data>
   <data name="SettingsTitle" xml:space="preserve">
-    <value>WindowTabs Settings</value>
+    <value>Impostazioni di WindowTabs</value>
   </data>
   <data name="SectionSize" xml:space="preserve">
-    <value>Size</value>
+    <value>Dimensioni</value>
   </data>
   <data name="SectionColors" xml:space="preserve">
-    <value>Colors</value>
+    <value>Colori</value>
   </data>
   <data name="SectionPresets" xml:space="preserve">
-    <value>Presets</value>
+    <value>Predefiniti</value>
   </data>
   <data name="ApplyColorScheme" xml:space="preserve">
-    <value>Apply a color scheme</value>
+    <value>Applica una combinazione di colori</value>
   </data>
   <data name="SectionBasics" xml:space="preserve">
-    <value>Basics</value>
+    <value>Generale</value>
   </data>
   <data name="SectionTasks" xml:space="preserve">
-    <value>Taskbar and task switcher</value>
+    <value>Barra delle applicazioni e selettore attività</value>
   </data>
   <data name="SectionSwitchTabs" xml:space="preserve">
-    <value>Switch tabs</value>
+    <value>Cambio scheda</value>
   </data>
   <data name="AlignLeft" xml:space="preserve">
-    <value>Left</value>
+    <value>Sinistra</value>
   </data>
   <data name="AlignCenter" xml:space="preserve">
-    <value>Center</value>
+    <value>Centro</value>
   </data>
   <data name="AlignRight" xml:space="preserve">
-    <value>Right</value>
+    <value>Destra</value>
   </data>
   <data name="On" xml:space="preserve">
-    <value>On</value>
+    <value>Attivato</value>
   </data>
   <data name="Off" xml:space="preserve">
-    <value>Off</value>
+    <value>Disattivato</value>
   </data>
   <data name="HotKeyNone" xml:space="preserve">
-    <value>None</value>
+    <value>Nessuna</value>
   </data>
   <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Annulla</value>
   </data>
   <data name="InvalidColor" xml:space="preserve">
-    <value>Invalid color value, must be a six digit hexadecimal number.</value>
+    <value>Colore non valido: inserisci un numero esadecimale di sei cifre.</value>
   </data>
   <data name="Ready" xml:space="preserve">
-    <value>Ready</value>
+    <value>Pronto</value>
   </data>
   <data name="Scanning" xml:space="preserve">
-    <value>Scanning windows...</value>
+    <value>Analisi delle finestre in corso...</value>
   </data>
   <data name="OneWindow" xml:space="preserve">
-    <value>1 window</value>
+    <value>1 finestra</value>
   </data>
   <data name="WindowCount" xml:space="preserve">
-    <value>{0} windows</value>
+    <value>{0} finestre</value>
   </data>
   <data name="Scan" xml:space="preserve">
-    <value>Scan</value>
+    <value>Analizza</value>
   </data>
   <data name="CopyToClipboard" xml:space="preserve">
-    <value>Copy to clipboard</value>
+    <value>Copia negli appunti</value>
   </data>
   <data name="CopySettingsFile" xml:space="preserve">
-    <value>Copy settings file to WindowTabs.exe path</value>
+    <value>Copia il file delle impostazioni nella cartella di WindowTabs.exe</value>
   </data>
   <data name="CopiedToClipboard" xml:space="preserve">
-    <value>Copied to clipboard</value>
+    <value>Copiato negli appunti</value>
   </data>
   <data name="CopiedToClipboardMessage" xml:space="preserve">
-    <value>Please paste (CTRL + V) into an email and send to 'support@windowtabs.com'</value>
+    <value>Incolla (CTRL + V) in un'e-mail e inviala a 'support@windowtabs.com'</value>
   </data>
   <data name="Copied" xml:space="preserve">
-    <value>Copied</value>
+    <value>Copiato</value>
   </data>
   <data name="SettingsFileCopiedMessage" xml:space="preserve">
-    <value>Restart WindowTabs.exe to use settings file of the same path</value>
+    <value>Riavvia WindowTabs.exe per usare il file delle impostazioni nella stessa cartella</value>
   </data>
   <data name="CopyFailed" xml:space="preserve">
-    <value>Copy failed</value>
+    <value>Copia non riuscita</value>
   </data>
   <data name="CopyFailedMessage" xml:space="preserve">
-    <value>Error: copy failed. Details:</value>
+    <value>Errore: copia non riuscita. Dettagli:</value>
   </data>
   <data name="MenuNewWindow" xml:space="preserve">
-    <value>New window</value>
+    <value>Nuova finestra</value>
   </data>
   <data name="MenuShrinkTabs" xml:space="preserve">
-    <value>Shrink tabs</value>
+    <value>Riduci schede</value>
   </data>
   <data name="MenuExpandTabs" xml:space="preserve">
-    <value>Expand tabs</value>
+    <value>Espandi schede</value>
   </data>
   <data name="MenuAutoHide" xml:space="preserve">
-    <value>Auto hide maximized</value>
+    <value>Nascondi automaticamente se massimizzata</value>
   </data>
   <data name="MenuCombineIcons" xml:space="preserve">
-    <value>Combine icons in taskbar</value>
+    <value>Combina le icone nella barra delle applicazioni</value>
   </data>
   <data name="MenuRenameTab" xml:space="preserve">
-    <value>Rename tab</value>
+    <value>Rinomina scheda</value>
   </data>
   <data name="MenuRestoreTabName" xml:space="preserve">
-    <value>Restore tab name</value>
+    <value>Ripristina il nome della scheda</value>
   </data>
   <data name="MenuRemoveTabs" xml:space="preserve">
-    <value>Remove tabs for '{0}' windows</value>
+    <value>Rimuovi le schede per le finestre di '{0}'</value>
   </data>
   <data name="MenuGroupTabs" xml:space="preserve">
-    <value>Group tabs for '{0}' windows</value>
+    <value>Raggruppa le schede per le finestre di '{0}'</value>
   </data>
   <data name="MenuClose" xml:space="preserve">
-    <value>Close</value>
+    <value>Chiudi</value>
   </data>
   <data name="MenuCloseOthers" xml:space="preserve">
-    <value>Close others</value>
+    <value>Chiudi le altre</value>
   </data>
   <data name="MenuCloseAllExe" xml:space="preserve">
-    <value>Close all '{0}' windows</value>
+    <value>Chiudi tutte le finestre di '{0}'</value>
   </data>
   <data name="MenuCloseAll" xml:space="preserve">
-    <value>Close all</value>
+    <value>Chiudi tutte</value>
   </data>
 </root>

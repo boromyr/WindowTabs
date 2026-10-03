@@ -101,9 +101,9 @@ type TabStripDecorator(group:WindowGroup) as this =
             group.zorder.value.tryHead.bind <| fun hwnd ->
                 let mutable bounds = Rectangle.Empty
                 if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    // keep clear of the window's rounded corner and border
-                    let left, top, right, bottom = Dpi.px 6, Dpi.px 3, Dpi.px 4, Dpi.px 2
-                    let rect = Rect(Pt(bounds.X + left, bounds.Y + top), Sz(bounds.Width - left - right, bounds.Height - top - bottom))
+                    // start at the frame edge so the tabs cover the window's own icon
+                    let rightMargin = Dpi.px 4
+                    let rect = Rect(Pt(bounds.X, bounds.Y), Sz(bounds.Width - rightMargin, bounds.Height))
                     if rect.size.width > 0 && rect.size.height > 0 then Some(rect) else None
                 else None
         else None
@@ -180,7 +180,7 @@ type TabStripDecorator(group:WindowGroup) as this =
         let checked(isChecked) = if isChecked then List2([MenuFlags.MF_CHECKED]) else List2()
         let grayed(isGrayed) = if isGrayed then List2([MenuFlags.MF_GRAYED]) else List2()
         let iconOnlyItem = CmiRegular({
-            text = (if group.isIconOnly then "Expand" else "Shrink") + " tabs"
+            text = FluentUI.text (if group.isIconOnly then "MenuExpandTabs" else "MenuShrinkTabs")
             image = None
             click = fun() -> group.isIconOnly <- group.isIconOnly.not
             flags = List2()
@@ -202,12 +202,12 @@ type TabStripDecorator(group:WindowGroup) as this =
                 click = setAlignment alignment
             })
             CmiPopUp({
-                text = "Align tabs"
+                text = FluentUI.text "alignment"
                 image = None
                 items = List2([
-                    ("Left", TabLeft)
-                    ("Center", TabCenter)
-                    ("Right",TabRight)
+                    (FluentUI.text "AlignLeft", TabLeft)
+                    (FluentUI.text "AlignCenter", TabCenter)
+                    (FluentUI.text "AlignRight", TabRight)
                 ]).map(alignmentMenuItem)
             })
 
@@ -215,7 +215,7 @@ type TabStripDecorator(group:WindowGroup) as this =
             let isAutoHideEnabledDef = Services.settings.getValue("autoHide").cast<bool>()
             let isEnabled = group.bb.read("autoHide", isAutoHideEnabledDef)
             CmiRegular({
-                text = "Auto hide maximized"
+                text = FluentUI.text "MenuAutoHide"
                 flags = checked(isEnabled)
                 image = None
                 click = fun() ->
@@ -224,7 +224,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let newWindowItem = 
             CmiRegular({
-                text = "New window"
+                text = FluentUI.text "MenuNewWindow"
                 flags = List2()
                 image = None
                 click = fun() -> Process.Start(processPath) |> ignore
@@ -232,7 +232,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let combineIconsInTaskbar =
             CmiRegular({
-                text = "Combine icons in taskbar"
+                text = FluentUI.text "MenuCombineIcons"
                 image = None
                 click = fun() -> Services.desktop.restartGroup(group.hwnd, group.isSuperBarEnabled.not)
                 flags = checked(group.isSuperBarEnabled)
@@ -240,7 +240,7 @@ type TabStripDecorator(group:WindowGroup) as this =
         
         let renameTabItem =
             CmiRegular({
-                text = "Rename tab"
+                text = FluentUI.text "MenuRenameTab"
                 image = None
                 flags = List2()
                 click = fun() ->
@@ -248,7 +248,7 @@ type TabStripDecorator(group:WindowGroup) as this =
             })
         let restoreTabNameItem =
             CmiRegular({
-                text = "Restore tab name"
+                text = FluentUI.text "MenuRestoreTabName"
                 image = None
                 click = fun() -> group.setTabName(hwnd, None)
                 flags = List2()
@@ -256,7 +256,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let removeTabsItem =
             CmiRegular({
-                text = sprintf "Remove tabs for '%s' windows" exeName
+                text = String.Format(FluentUI.text "MenuRemoveTabs", exeName)
                 image = None
                 click = fun() -> Services.filter.setIsTabbingEnabledForProcess processPath false
                 flags = List2()
@@ -265,7 +265,7 @@ type TabStripDecorator(group:WindowGroup) as this =
         let isGrouped = Services.program.getAutoGroupingEnabled processPath
         let groupTabsItem =
             CmiRegular({
-                text = sprintf "Group tabs for '%s' windows" exeName
+                text = String.Format(FluentUI.text "MenuGroupTabs", exeName)
                 image = None
                 click = fun() -> Services.program.setAutoGroupingEnabled processPath isGrouped.not
                 flags = checked(isGrouped)
@@ -273,7 +273,7 @@ type TabStripDecorator(group:WindowGroup) as this =
                  
         let closeTabItem = 
             CmiRegular({
-                text = "Close"
+                text = FluentUI.text "MenuClose"
                 image = None
                 click = fun() -> this.onCloseWindow hwnd
                 flags = List2()
@@ -281,7 +281,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let closeOtherTabsItem =
             CmiRegular({
-                text = "Close others"
+                text = FluentUI.text "MenuCloseOthers"
                 image = None
                 click = fun() -> this.onCloseOtherWindows hwnd
                 flags = List2()
@@ -289,7 +289,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let closeAllExeTabsItem =
             CmiRegular({
-                text = sprintf "Close all '%s' windows" exeName
+                text = String.Format(FluentUI.text "MenuCloseAllExe", exeName)
                 image = None
                 click = fun() -> this.onCloseAllExeWindows exeName
                 flags = List2()
@@ -297,7 +297,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let closeAllTabsItem =
             CmiRegular({
-                text = "Close all"
+                text = FluentUI.text "MenuCloseAll"
                 image = None
                 click = fun() -> this.onCloseAllWindows()
                 flags = List2()
@@ -305,7 +305,7 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         let managerItem =
             CmiRegular({
-                text = "Settings..."
+                text = FluentUI.text "Settings"
                 image = None
                 click = fun() -> Services.managerView.show()
                 flags = List2()

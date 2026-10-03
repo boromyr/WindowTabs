@@ -73,7 +73,7 @@ type WorkspaceWindow() as this =
                     List2([
                         ("Name", nameEditor.control)
                         ("Title", titleEditor.control)
-                        ("Match Type", matchTypeEditor.cast<IPropEditor>().control)
+                        ("MatchType", matchTypeEditor.cast<IPropEditor>().control)
                     ])
                 member x.height  = 250
                 member x.ok() = 
@@ -365,8 +365,8 @@ type WorkspaceModel() as this =
             let form = UIHelper.okCancelForm table
             let icon = Services.openIcon("edit.ico")
             form.Icon <- icon
-            form.Width <- 300
-            form.Height <- editInfo?height
+            form.Width <- Dpi.px 380
+            form.Height <- Dpi.px editInfo?height
             form.StartPosition <- FormStartPosition.CenterParent
             form.Text <- editInfo?title
             let ok = form.ShowDialog(parent) = DialogResult.OK

@@ -39,7 +39,6 @@ type WorkspaceView() as this =
     let Cell = CellScope()
     
     let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
-    let font = Font(resources.GetString("Font"), 10f)
 
     member this.wm = Cell.cacheProp this <| fun() ->
         let wm = WorkspaceModel()
@@ -51,7 +50,7 @@ type WorkspaceView() as this =
         TreeColumn(resources.GetString("Name"), Dpi.px 200)
 
     member this.matchTypeColumn = Cell.cacheProp this <| fun() ->
-        TreeColumn(resources.GetString("MatchType"), Dpi.px 100)
+        TreeColumn(resources.GetString("MatchType"), Dpi.px 170)
 
     member this.titleColumn = Cell.cacheProp this <| fun() ->
         TreeColumn(resources.GetString("Title"), Dpi.px 350)
@@ -60,11 +59,8 @@ type WorkspaceView() as this =
         let model = TreeModel()
         model
 
-    member this.panel = Cell.cacheProp this <| fun() -> 
-        let panel = Panel()
-        panel.Controls.Add(this.tree)
-        panel.Controls.Add(this.toolbar)
-        panel
+    member this.panel : Control = Cell.cacheProp this <| fun() ->
+        FluentUI.fillPage (resources.GetString("Workspace")) [this.toolbar] this.tree
 
     member this.iconNodeControl = Cell.cacheProp this <| fun() ->
         let control = NodeControls.NodeStateIcon()
@@ -117,49 +113,29 @@ type WorkspaceView() as this =
         tree.Model <- this.model
         tree.Dock <- DockStyle.Fill
         tree.SelectionChanged.Add <| this.onTreeSelectionChanged
-        tree.Font <- font
+        tree.Font <- FluentTheme.Body
+        tree.BackColor <- FluentTheme.Card
+        tree.ForeColor <- FluentTheme.Text
         tree.BorderStyle <- BorderStyle.None
         tree
 
-    member this.newButton : ToolStripButton = Cell.cacheProp this <| fun() ->
-        let btn = ToolStripButton(resources.GetString("New"))
-        btn.Image <- Services.openImage("add.png")
-        btn.Click.Add <| fun _ -> this.onNewButton()
-        btn
+    member this.newButton : FluentButton = Cell.cacheProp this <| fun() ->
+        FluentUI.button (Some "") (resources.GetString("New")) (fun () -> this.onNewButton())
 
-    member this.restoreButton : ToolStripButton = Cell.cacheProp this <| fun() ->
-        let btn = ToolStripButton(resources.GetString("Restore"))
-        btn.Image <- Services.openImage("restore.png")
-        btn.Click.Add <| fun _ -> this.onRestoreButton()
+    member this.restoreButton : FluentButton = Cell.cacheProp this <| fun() ->
+        let btn = FluentUI.button (Some "") (resources.GetString("Restore")) (fun () -> this.onRestoreButton())
         this.wm.canRestoreChanged.Add <| fun(canRestore) -> 
             btn.Enabled <- canRestore
         btn
 
-    member this.removeButton : ToolStripButton = Cell.cacheProp this <| fun() ->
-        let btn = ToolStripButton(resources.GetString("Remove"))
-        btn.Image <- Services.openImage("delete.png")
-        btn.Click.Add <| fun _ -> this.onRemoveButton()
-        btn
+    member this.removeButton : FluentButton = Cell.cacheProp this <| fun() ->
+        FluentUI.button (Some "") (resources.GetString("Remove")) (fun () -> this.onRemoveButton())
 
-    member this.editButton : ToolStripButton = Cell.cacheProp this <| fun() ->
-        let btn = ToolStripButton(resources.GetString("Edit"))
-        btn.Image <- Services.openImage("edit.png")
-        btn.Click.Add <| fun _ -> this.onEditButton()
-        btn
+    member this.editButton : FluentButton = Cell.cacheProp this <| fun() ->
+        FluentUI.button (Some "") (resources.GetString("Edit")) (fun () -> this.onEditButton())
 
-    member this.toolbar = Cell.cacheProp this <| fun() ->
-        let ts = ToolStripEx(
-            ClickThrough=true
-        )
-        ts.GripStyle  <- ToolStripGripStyle.Hidden
-        ts.Dock <- DockStyle.Top
-        ts.Items.Add(this.newButton).ignore
-        ts.Items.Add(this.restoreButton).ignore
-        ts.Items.Add(this.editButton).ignore
-        ts.Items.Add(this.removeButton).ignore
-        ts.Font <- font
-        ts
-
+    member this.toolbar : Control = Cell.cacheProp this <| fun() ->
+        FluentUI.row [this.newButton; this.restoreButton; this.editButton; this.removeButton]
     member this.findNode(node:TreeNodeAdv) =
         this.model.FindNode(this.tree.GetPath(node)) :?> WorkspaceNode
 
@@ -198,4 +174,4 @@ type WorkspaceView() as this =
     interface ISettingsView with
         member x.key = SettingsViewType.LayoutSettings
         member x.title = resources.GetString("Workspace")
-        member x.control = this.panel :> Control
+        member x.control = this.panel

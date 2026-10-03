@@ -17,115 +17,70 @@ type HotKeyView() =
                     with get() = unbox<'a>(Services.settings.getValue(name))
                     and set(value) = Services.settings.setValue(name, box(value))
         }
-        
+
     let resources = new ResourceManager("Properties.Resources", Assembly.GetExecutingAssembly());
 
-    let checkBox (prop:IProperty<bool>) = 
-        let checkbox = BoolEditor() :> IPropEditor
-        checkbox.value <- box(prop.value)
-        checkbox.changed.Add <| fun() -> prop.value <- unbox<bool>(checkbox.value)
-        checkbox.control
+    let toggle key (prop:IProperty<bool>) =
+        FluentUI.toggleCard (resources.GetString(key)) prop.value (fun value -> prop.value <- value)
 
-    let settingsCheckbox key = checkBox(settingsProperty(key))
+    // items are (stored value, displayed text)
+    let dropDown (prop:IProperty<string>, items: (string * string) list) =
+        let combo = new FluentComboBox()
+        combo.Font <- FluentTheme.Body
+        combo.Width <- Dpi.px 160
+        combo.Items.AddRange(items |> List.map snd |> List.toArray |> Array.map box)
 
-    let dropDown (prop:IProperty<string>, items: string list) = 
-        let combo = new ComboBox()
-
-        // First add items
-        combo.Items.AddRange(items |> List.toArray |> Array.map box)
-        
-        // Then set initial value if exists, otherwise select first item
-        let initialIndex = 
-            match items |> List.tryFindIndex ((=) prop.value) with
+        // select the stored value, or the first item
+        let initialIndex =
+            match items |> List.tryFindIndex (fst >> (=) prop.value) with
             | Some index -> index
             | None -> if combo.Items.Count > 0 then 0 else -1
-        
+
         if initialIndex >= 0 then
             combo.SelectedIndex <- initialIndex
-            
+
         combo.SelectedIndexChanged.Add(fun _ ->
             if combo.SelectedIndex >= 0 then
-                prop.value <- combo.SelectedItem.ToString()
+                prop.value <- fst (items.[combo.SelectedIndex])
         )
 
         combo :> Control
 
     let settingsDropDown key value = dropDown(settingsProperty(key), value)
 
-    let basicForm = 
-        let fields = List2([
-            ("runAtStartup", settingsCheckbox "runAtStartup")
-            ("hideInactiveTabs", settingsCheckbox "hideInactiveTabs")
-            ("isTabbingEnabledForAllProcessesByDefault", checkBox(prop<IFilterService, bool>(Services.filter, "isTabbingEnabledForAllProcessesByDefault")))
-            ("autoHide", settingsCheckbox "autoHide")
-            ("alignment", settingsDropDown "alignment" ["Left"; "Center"; "Right"])
-            ("tabsInTitleBar", settingsCheckbox "tabsInTitleBar")
-        ])
-        "Basics", UIHelper.form fields
+    let card key control = FluentUI.settingCard (resources.GetString(key)) None control
 
-    let taskForm = 
-        let fields = List2([
-            ("combineIconsInTaskbar", settingsCheckbox "combineIconsInTaskbar")
-            ("replaceAltTab", settingsCheckbox "replaceAltTab")
-            ("groupWindowsInSwitcher", settingsCheckbox "groupWindowsInSwitcher")
-        ])
-        "Tasks", UIHelper.form fields
+    let hotKeyCard (key, text) =
+        let editor = HotKeyEditor() :> IPropEditor
+        editor.value <- Services.program.getHotKey(key)
+        editor.changed.Add <| fun() ->
+            Services.program.setHotKey key (unbox<int>(editor.value))
+        card text editor.control
 
-    let switchTabs =
-        let hotKeys = List2([
-            ("nextTab", "nextTab")
-            ("prevTab", "prevTab")
-        ])
+    let page =
+        FluentUI.page (resources.GetString("Behavior")) [
+            FluentUI.sectionHeader (FluentUI.text "SectionBasics")
+            toggle "runAtStartup" (settingsProperty "runAtStartup")
+            toggle "hideInactiveTabs" (settingsProperty "hideInactiveTabs")
+            toggle "isTabbingEnabledForAllProcessesByDefault" (prop<IFilterService, bool>(Services.filter, "isTabbingEnabledForAllProcessesByDefault"))
+            toggle "autoHide" (settingsProperty "autoHide")
+            toggle "tabsInTitleBar" (settingsProperty "tabsInTitleBar")
+            card "alignment" (settingsDropDown "alignment" [("Left", FluentUI.text "AlignLeft"); ("Center", FluentUI.text "AlignCenter"); ("Right", FluentUI.text "AlignRight")])
 
-        let editors = hotKeys.enumerate.fold (Map2()) <| fun editors (i,(key, text)) ->
-            let caption = resources.GetString text
-            let label = UIHelper.label caption
-            let editor = HotKeyEditor() :> IPropEditor
-            editor.control.Margin <- Padding(0,5,0,5)
-            label.Margin <- Padding(0,5,0,5)
-            editors.add key editor
+            FluentUI.sectionHeader (FluentUI.text "SectionTasks")
+            toggle "combineIconsInTaskbar" (settingsProperty "combineIconsInTaskbar")
+            toggle "replaceAltTab" (settingsProperty "replaceAltTab")
+            toggle "groupWindowsInSwitcher" (settingsProperty "groupWindowsInSwitcher")
 
-        hotKeys.iter <| fun (key,_) ->
-            let editor = editors.find key
-            editor.value <- Services.program.getHotKey(key)
-            editor.changed.Add <| fun() ->
-                Services.program.setHotKey key (unbox<int>(editor.value))
-
-        let fields = hotKeys.map <| fun(key,text) ->
-            let editor = editors.find key
-            text, editor.control
-
-        let fields = fields.prependList(List2([
-            ("enableCtrlNumberHotKey", settingsCheckbox "enableCtrlNumberHotKey")
-            ("enableHoverActivate", settingsCheckbox "enableHoverActivate")
-            ("enableShiftScroll", settingsCheckbox "enableShiftScroll")
-        ]))
-
-        "Switch Tabs", UIHelper.form fields
-
-    let sections = List2([
-        basicForm
-        taskForm
-        switchTabs
-        ])
-
-    let table = 
-        let font = Font(resources.GetString("Font"), 10f)
-        let controls = sections.map <| fun(text,control) ->
-            control.Dock <- DockStyle.Fill
-            let group = GroupBox()
-            group.Dock <- DockStyle.Top
-            group.Margin <- Padding(10)
-            group.AutoSize <- true
-            group.Text <- text
-            group.Font <- font
-            group.Controls.Add(control)
-            group :> Control
-        let table = UIHelper.vbox controls
-        table.Dock <- DockStyle.Fill
-        table
+            FluentUI.sectionHeader (FluentUI.text "SectionSwitchTabs")
+            toggle "enableCtrlNumberHotKey" (settingsProperty "enableCtrlNumberHotKey")
+            toggle "enableHoverActivate" (settingsProperty "enableHoverActivate")
+            toggle "enableShiftScroll" (settingsProperty "enableShiftScroll")
+            hotKeyCard ("nextTab", "nextTab")
+            hotKeyCard ("prevTab", "prevTab")
+        ]
 
     interface ISettingsView with
         member x.key = SettingsViewType.HotKeySettings
         member x.title = resources.GetString("Behavior")
-        member x.control = table :> Control
+        member x.control = page

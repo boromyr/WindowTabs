@@ -252,4 +252,130 @@
   <data name="Font" xml:space="preserve">
     <value>Segoe UI</value>
   </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>WindowTabs の設定</value>
+  </data>
+  <data name="SectionSize" xml:space="preserve">
+    <value>サイズ</value>
+  </data>
+  <data name="SectionColors" xml:space="preserve">
+    <value>色</value>
+  </data>
+  <data name="SectionPresets" xml:space="preserve">
+    <value>プリセット</value>
+  </data>
+  <data name="ApplyColorScheme" xml:space="preserve">
+    <value>配色を適用</value>
+  </data>
+  <data name="SectionBasics" xml:space="preserve">
+    <value>基本</value>
+  </data>
+  <data name="SectionTasks" xml:space="preserve">
+    <value>タスクバーとタスク切り替え</value>
+  </data>
+  <data name="SectionSwitchTabs" xml:space="preserve">
+    <value>タブの切り替え</value>
+  </data>
+  <data name="AlignLeft" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="AlignCenter" xml:space="preserve">
+    <value>中央</value>
+  </data>
+  <data name="AlignRight" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="On" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="Off" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="HotKeyNone" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="InvalidColor" xml:space="preserve">
+    <value>無効な色の値です。6 桁の 16 進数を入力してください。</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="Scanning" xml:space="preserve">
+    <value>ウィンドウをスキャンしています...</value>
+  </data>
+  <data name="OneWindow" xml:space="preserve">
+    <value>1 個のウィンドウ</value>
+  </data>
+  <data name="WindowCount" xml:space="preserve">
+    <value>{0} 個のウィンドウ</value>
+  </data>
+  <data name="Scan" xml:space="preserve">
+    <value>スキャン</value>
+  </data>
+  <data name="CopyToClipboard" xml:space="preserve">
+    <value>クリップボードにコピー</value>
+  </data>
+  <data name="CopySettingsFile" xml:space="preserve">
+    <value>設定ファイルを WindowTabs.exe のフォルダーにコピー</value>
+  </data>
+  <data name="CopiedToClipboard" xml:space="preserve">
+    <value>クリップボードにコピーしました</value>
+  </data>
+  <data name="CopiedToClipboardMessage" xml:space="preserve">
+    <value>メールに貼り付けて (CTRL + V) 'support@windowtabs.com' に送信してください</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>コピーしました</value>
+  </data>
+  <data name="SettingsFileCopiedMessage" xml:space="preserve">
+    <value>同じフォルダーの設定ファイルを使うには WindowTabs.exe を再起動してください</value>
+  </data>
+  <data name="CopyFailed" xml:space="preserve">
+    <value>コピーに失敗しました</value>
+  </data>
+  <data name="CopyFailedMessage" xml:space="preserve">
+    <value>エラー: コピーに失敗しました。詳細:</value>
+  </data>
+  <data name="MenuNewWindow" xml:space="preserve">
+    <value>新しいウィンドウ</value>
+  </data>
+  <data name="MenuShrinkTabs" xml:space="preserve">
+    <value>タブを縮小</value>
+  </data>
+  <data name="MenuExpandTabs" xml:space="preserve">
+    <value>タブを展開</value>
+  </data>
+  <data name="MenuAutoHide" xml:space="preserve">
+    <value>最大化時に自動的に隠す</value>
+  </data>
+  <data name="MenuCombineIcons" xml:space="preserve">
+    <value>タスクバーのアイコンをまとめる</value>
+  </data>
+  <data name="MenuRenameTab" xml:space="preserve">
+    <value>タブの名前を変更</value>
+  </data>
+  <data name="MenuRestoreTabName" xml:space="preserve">
+    <value>タブの名前を元に戻す</value>
+  </data>
+  <data name="MenuRemoveTabs" xml:space="preserve">
+    <value>'{0}' のウィンドウのタブを削除</value>
+  </data>
+  <data name="MenuGroupTabs" xml:space="preserve">
+    <value>'{0}' のウィンドウのタブをグループ化</value>
+  </data>
+  <data name="MenuClose" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="MenuCloseOthers" xml:space="preserve">
+    <value>他を閉じる</value>
+  </data>
+  <data name="MenuCloseAllExe" xml:space="preserve">
+    <value>'{0}' のウィンドウをすべて閉じる</value>
+  </data>
+  <data name="MenuCloseAll" xml:space="preserve">
+    <value>すべて閉じる</value>
+  </data>
 </root>
