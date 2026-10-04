@@ -272,6 +272,60 @@ namespace Bemo
         }
 
         /// <summary>
+        /// Gets the visible part of the window, without the invisible resize borders, in the
+        /// caller's (possibly DPI-virtualized) coordinates.
+        /// </summary>
+        public static Rectangle GetVisibleBounds(IntPtr hwnd)
+        {
+            RECT logicalWindow;
+            WinUserApi.GetWindowRect(hwnd, out logicalWindow);
+            Rectangle fallback = logicalWindow.ToRectangle();
+            try
+            {
+                RECT physicalWindow;
+                IntPtr oldContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+                try { WinUserApi.GetWindowRect(hwnd, out physicalWindow); }
+                finally { SetThreadDpiAwarenessContext(oldContext); }
+
+                RECT frame;
+                if (DwmApi.DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_EXTENDED_FRAME_BOUNDS, out frame, Marshal.SizeOf(typeof(RECT))) != 0) return fallback;
+
+                int physicalWidth = physicalWindow.Right - physicalWindow.Left;
+                int logicalWidth = logicalWindow.Right - logicalWindow.Left;
+                if (physicalWidth <= 0 || logicalWidth <= 0) return fallback;
+                double scale = (double)physicalWidth / logicalWidth;
+
+                Func<int, int> toLogicalX = x => logicalWindow.Left + (int)Math.Round((x - physicalWindow.Left) / scale);
+                Func<int, int> toLogicalY = y => logicalWindow.Top + (int)Math.Round((y - physicalWindow.Top) / scale);
+                Rectangle bounds = Rectangle.FromLTRB(toLogicalX(frame.Left), toLogicalY(frame.Top), toLogicalX(frame.Right), toLogicalY(frame.Bottom));
+                return bounds.Width > 0 && bounds.Height > 0 ? bounds : fallback;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return fallback;
+            }
+        }
+
+        [DllImport("dwmapi.dll")]
+        static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+        const int DWMWA_CLOAKED = 14;
+
+        /// <summary>
+        /// True for windows DWM keeps off screen although they are visible, such as windows on
+        /// another virtual desktop or suspended Store apps.
+        /// </summary>
+        public static bool IsCloaked(IntPtr hwnd)
+        {
+            try
+            {
+                int cloaked;
+                return DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, out cloaked, sizeof(int)) == 0 && cloaked != 0;
+            }
+            catch (DllNotFoundException) { return false; }
+            catch (EntryPointNotFoundException) { return false; }
+        }
+
+        /// <summary>
         /// Hides or restores the title text and icon the system draws in the window's caption.
         /// </summary>
         public static void SetCaptionHidden(IntPtr hwnd, bool hidden)

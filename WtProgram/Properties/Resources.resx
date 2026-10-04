@@ -384,4 +384,19 @@
   <data name="MenuCloseAll" xml:space="preserve">
     <value>Close all</value>
   </data>
+  <data name="dragToGroupKey" xml:space="preserve">
+    <value>Group windows by dragging with</value>
+  </data>
+  <data name="dragToGroupKeyDescription" xml:space="preserve">
+    <value>Hold the key while dragging a window by its title bar and release it over another window</value>
+  </data>
+  <data name="KeyCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="KeyShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="KeyAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
 </root>

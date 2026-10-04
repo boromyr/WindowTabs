@@ -378,4 +378,19 @@
   <data name="MenuCloseAll" xml:space="preserve">
     <value>すべて閉じる</value>
   </data>
+  <data name="dragToGroupKey" xml:space="preserve">
+    <value>ドラッグでウィンドウをグループ化するキー</value>
+  </data>
+  <data name="dragToGroupKeyDescription" xml:space="preserve">
+    <value>キーを押したままウィンドウのタイトル バーをドラッグし、別のウィンドウの上で離します</value>
+  </data>
+  <data name="KeyCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="KeyShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="KeyAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
 </root>

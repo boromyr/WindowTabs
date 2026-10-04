@@ -210,7 +210,7 @@ type DragDropController(parent:IDragDropParent) =
                     onCancel = fun() -> 
                         dragActionCell.set(None)
                     onBegin = fun() -> 
-                        parent.dragBegin()
+                        parent.dragBegin(data)
                     onDrop = fun pt ->
                         parent.dragDrop(pt, data)
                     onEnd = fun() ->    

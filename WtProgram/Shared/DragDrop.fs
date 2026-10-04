@@ -2,7 +2,8 @@
 open System
 
 type IDragDropParent =
-    abstract member dragBegin : unit -> unit
+    /// Gets the data of the item being dragged.
+    abstract member dragBegin : obj -> unit
     abstract member dragDrop : (Pt * obj) -> unit
     abstract member dragEnd : unit -> unit
 

@@ -1,4 +1,4 @@
-namespace Bemo
+﻿namespace Bemo
 open System
 open System.Drawing
 open System.IO
@@ -66,6 +66,9 @@ type HotKeyView() =
             toggle "autoHide" (settingsProperty "autoHide")
             toggle "tabsInTitleBar" (settingsProperty "tabsInTitleBar")
             card "alignment" (settingsDropDown "alignment" [("Left", FluentUI.text "AlignLeft"); ("Center", FluentUI.text "AlignCenter"); ("Right", FluentUI.text "AlignRight")])
+
+            FluentUI.settingCard (FluentUI.text "dragToGroupKey") (Some (FluentUI.text "dragToGroupKeyDescription"))
+                (settingsDropDown "dragToGroupKey" [("Ctrl", FluentUI.text "KeyCtrl"); ("Shift", FluentUI.text "KeyShift"); ("Alt", FluentUI.text "KeyAlt"); ("None", FluentUI.text "Off")])
 
             FluentUI.sectionHeader (FluentUI.text "SectionTasks")
             toggle "combineIconsInTaskbar" (settingsProperty "combineIconsInTaskbar")

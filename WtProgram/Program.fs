@@ -151,6 +151,8 @@ type Program() as this =
                     this.ensureWindowIsSubscribed(window)
                     if this.isTabMonitoringSuspended.not then
                         this.ensureWindowIsGrouped(window)
+                if this.isTabMonitoringSuspended.not then
+                    this.releaseLoneManualWindows()
             this.destroyEmptyGroups()
             this.removeUntabableWindows()
 
@@ -175,6 +177,12 @@ type Program() as this =
     member this.ensureWindowIsGrouped(window) =
         if this.isTabbableWindow(window) && this.isInGroup(window.hwnd).not then
             this.addWindowToGroup(window)
+
+    /// A window grouped by hand goes back to having no tabs once it is the only one left in its group.
+    member this.releaseLoneManualWindows() =
+        this.desktop.groups.iter <| fun gi ->
+            if gi.windows.count = 1 && Services.filter.isManuallyGrouped(gi.windows.head) then
+                Services.filter.setManuallyGrouped (gi.windows.head) false
 
     member this.destroyEmptyGroups() =
         this.desktop.groups.iter <| fun gi ->
@@ -383,5 +391,6 @@ let program = Program()
 program.run(List2<obj>([
     InputManagerPlugin(Set2(List2([WindowMessages.WM_MOUSEWHEEL])))
     NotifyIconPlugin()
+    DragToGroupPlugin()
     ExceptionHandlerPlugin()
 ]).map(fun o -> o.cast<IPlugin>()))

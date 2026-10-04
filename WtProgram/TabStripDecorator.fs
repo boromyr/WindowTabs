@@ -101,9 +101,9 @@ type TabStripDecorator(group:WindowGroup) as this =
             group.zorder.value.tryHead.bind <| fun hwnd ->
                 let mutable bounds = Rectangle.Empty
                 if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    // start at the frame edge so the tabs cover the window's own icon
-                    let rightMargin = Dpi.px 4
-                    let rect = Rect(Pt(bounds.X, bounds.Y), Sz(bounds.Width - rightMargin, bounds.Height))
+                    // just inside the window's border, so the tabs still cover the window's own icon
+                    let left, top, right = Dpi.px 3, Dpi.px 2, Dpi.px 4
+                    let rect = Rect(Pt(bounds.X + left, bounds.Y + top), Sz(bounds.Width - left - right, bounds.Height - top))
                     if rect.size.width > 0 && rect.size.height > 0 then Some(rect) else None
                 else None
         else None

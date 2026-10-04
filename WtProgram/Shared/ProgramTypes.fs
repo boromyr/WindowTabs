@@ -36,6 +36,7 @@ type SettingsRec = {
     enableShiftScroll: bool
     tabsInTitleBar: bool
     alignment: string
+    dragToGroupKey: string
     }
 
 type ILicenseManager =
@@ -56,6 +57,9 @@ type IFilterService =
     abstract member isTabbingEnabledForAllProcessesByDefault : bool with get, set
     abstract member setIsTabbingEnabledForProcess : string -> bool -> unit
     abstract member getIsTabbingEnabledForProcess : string -> bool
+    /// Windows the user grouped by hand get tabs even if tabbing is off for their program.
+    abstract member isManuallyGrouped : IntPtr -> bool
+    abstract member setManuallyGrouped : IntPtr -> bool -> unit
 
 type SettingsViewType =
     | ProgramSettings
@@ -125,6 +129,11 @@ type IDesktop =
     abstract member groupExited: IEvent<IGroup>
     abstract member groupRemoved: IEvent<IGroup>
     abstract member foregroundGroup: IGroup option
+    /// The window of a tab when it starts being dragged, None when the drag ends.
+    abstract member tabDragChanged: IEvent<IntPtr option>
+    /// Called with the window of a tab dropped outside the tab strips; returns true if it
+    /// took care of the window, which is otherwise placed where it was dropped.
+    abstract member setTabDropHandler: (IntPtr -> bool) -> unit
 
 type IPlugin =
     abstract member init: unit -> unit

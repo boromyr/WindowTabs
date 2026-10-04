@@ -77,6 +77,8 @@ type Desktop(notify:IDesktopNotification) as this =
     let exitedEvent = Event<_>()
     let removedEvent = Event<_>()
     let _dd = DragDropController(this :> IDragDropParent) :> IDragDrop
+    let tabDragEvent = Event<IntPtr option>()
+    let mutable tabDropHandler : IntPtr -> bool = fun _ -> false
     
     do 
         Services.register(_dd, false)
@@ -126,34 +128,43 @@ type Desktop(notify:IDesktopNotification) as this =
         member x.groups = this.groups.where(fun(g) -> g.isExited.not).map(fun(g) -> g.cast<IGroup>())
         member x.groupExited = exitedEvent.Publish
         member x.groupRemoved = removedEvent.Publish
+        member x.tabDragChanged = tabDragEvent.Publish
+        member x.setTabDropHandler handler = tabDropHandler <- handler
         member x.foregroundGroup
             with get() =
                 let foregroundWindow = os.foreground
                 this.findGroupContainingHwnd(foregroundWindow.hwnd)
 
     interface IDragDropParent with
-        member x.dragBegin() = invoker.asyncInvoke <| fun() ->
+        member x.dragBegin(data) = invoker.asyncInvoke <| fun() ->
             isDraggingCell.set(true)
+            match data with
+            | :? TabDragInfo as dragInfo ->
+                let (Tab(hwnd)) = dragInfo.tab
+                tabDragEvent.Trigger(Some(hwnd))
+            | _ -> ()
 
         member x.dragDrop((pt, data)) = invoker.asyncInvoke <| fun() ->
             let dragInfo = unbox<TabDragInfo>(data)
             let (Tab(hwnd)) = dragInfo.tab
-            let window = os.windowFromHwnd(hwnd)
-            let windowPt = pt.sub(dragInfo.tabOffset).add(this.windowOffset)
-            let monitor = Mon.fromPoint windowPt
-            let workspaceOffset = monitor.map(fun mon -> mon.workRect.location.sub(mon.displayRect.location)).def(Pt())
-            let windowPt = windowPt.sub(workspaceOffset)
-            window.setPlacement({
-                window.placement with
-                    showCmd = ShowWindowCommands.SW_SHOWNORMAL
-                    rcNormalPosition = Rect(
-                        windowPt,
-                        window.placement.rcNormalPosition.size)
-            })  
-            notify.dragDrop(hwnd)
+            if tabDropHandler hwnd |> not then
+                let window = os.windowFromHwnd(hwnd)
+                let windowPt = pt.sub(dragInfo.tabOffset).add(this.windowOffset)
+                let monitor = Mon.fromPoint windowPt
+                let workspaceOffset = monitor.map(fun mon -> mon.workRect.location.sub(mon.displayRect.location)).def(Pt())
+                let windowPt = windowPt.sub(workspaceOffset)
+                window.setPlacement({
+                    window.placement with
+                        showCmd = ShowWindowCommands.SW_SHOWNORMAL
+                        rcNormalPosition = Rect(
+                            windowPt,
+                            window.placement.rcNormalPosition.size)
+                })  
+                notify.dragDrop(hwnd)
             
         member x.dragEnd() = invoker.asyncInvoke <| fun() ->
             isDraggingCell.set(false)
+            tabDragEvent.Trigger(None)
             notify.dragEnd()
 
     

@@ -6,6 +6,8 @@ type FilterService() as this =
     let blackListedExeNames = 
         let names = Set2(List2(["taskmgr.exe"]))
         if System.Diagnostics.Debugger.IsAttached then names.add("devenv.exe") else names
+    // read and written on the main thread only
+    let mutable manuallyGrouped = Set2<IntPtr>()
 
     member this.includedPaths 
         with get() = Services.settings.getValue("includedPaths").cast<Set2<string>>()
@@ -69,7 +71,8 @@ type FilterService() as this =
             this.includedPaths.contains(processPath)
 
     member this.isTabbableWindow(window:Window) = 
-        this.getIsTabbingEnabledForProcess(window.pid.processPath) && this.isAppWindow(window)
+        (manuallyGrouped.contains(window.hwnd) || this.getIsTabbingEnabledForProcess(window.pid.processPath)) &&
+        this.isAppWindow(window)
 
     interface IFilterService with
         
@@ -107,4 +110,9 @@ type FilterService() as this =
 
         member x.getIsTabbingEnabledForProcess(processPath) = 
             this.getIsTabbingEnabledForProcess(processPath)
+
+        member x.isManuallyGrouped(hwnd) = manuallyGrouped.contains(hwnd)
+
+        member x.setManuallyGrouped hwnd grouped =
+            manuallyGrouped <- if grouped then manuallyGrouped.add hwnd else manuallyGrouped.remove hwnd
 

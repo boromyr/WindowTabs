@@ -76,6 +76,7 @@
     <Compile Include="FilterService.fs" />
     <Compile Include="DesktopPlugins/InputManagerPlugin.fs" />
     <Compile Include="DesktopPlugins/NotifyIconPlugin.fs" />
+    <Compile Include="DesktopPlugins/DragToGroupPlugin.fs" />
     <Compile Include="DesktopPlugins/ExceptionHandlerPlugin.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
