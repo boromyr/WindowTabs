@@ -256,17 +256,6 @@ namespace Bemo
                 // caption button bounds are relative to the window rect
                 int left = frame.Left;
                 int top = frame.Top;
-                if (WinUserApi.IsZoomed(hwnd))
-                {
-                    // A maximized window starts above the screen, and DWM reports its frame from where
-                    // a standard maximized window becomes visible, also once it has been moved down
-                    // (see SetMaximizedTitleBarExtended): the title bar shows from the screen top.
-                    MONITORINFO monitor;
-                    oldContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-                    try { monitor = GetMonitorInfo(WinUserApi.MonitorFromWindow(hwnd, MonitorFlags.MONITOR_DEFAULTTONEAREST)); }
-                    finally { SetThreadDpiAwarenessContext(oldContext); }
-                    top = Math.Max(physicalWindow.Top, monitor.rcWork.Top);
-                }
                 int right = physicalWindow.Left + buttons.Left;
                 int bottom = physicalWindow.Top + buttons.Bottom;
                 if (right <= left || bottom <= top) return false;
@@ -280,37 +269,6 @@ namespace Bemo
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Windows keeps the top of a maximized window's title bar (its resize border) above the
-        /// screen, so the title bar is lower than when the window is not maximized. Extending moves
-        /// the window down by that border, keeping it maximized and its restore position; not
-        /// extending moves it back. Does nothing to windows that are not in either position.
-        /// </summary>
-        public static void SetMaximizedTitleBarExtended(IntPtr hwnd, bool extended)
-        {
-            if (!WinUserApi.IsZoomed(hwnd) || WinUserApi.IsHungAppWindow(hwnd)) return;
-            RECT window;
-            if (!WinUserApi.GetWindowRect(hwnd, out window)) return;
-            RECT work = GetMonitorInfo(WinUserApi.MonitorFromWindow(hwnd, MonitorFlags.MONITOR_DEFAULTTONEAREST)).rcWork;
-            int border = work.Left - window.Left;
-            if (border <= 0) return;
-            int standardTop = work.Top - border;
-            int from = extended ? standardTop : work.Top;
-            int to = extended ? work.Top : standardTop;
-            if (window.Top != from) return;
-
-            // Windows puts a maximized window back in place when it is moved, so take the
-            // maximized state away for the move; that also overwrites the restore position.
-            WINDOWPLACEMENT placement = WINDOWPLACEMENT.NewWindowPlacement();
-            if (WinUserApi.GetWindowPlacement(hwnd, ref placement) == 0) return;
-            IntPtr style = WinUserApi.GetWindowLong(hwnd, WindowLongFieldOffset.GWL_STYLE);
-            WinUserApi.SetWindowLong(hwnd, WindowLongFieldOffset.GWL_STYLE, new IntPtr(style.ToInt64() & ~(long)WindowsStyles.WS_MAXIMIZE));
-            WinUserApi.SetWindowPos(hwnd, IntPtr.Zero, window.Left, to, window.Right - window.Left, window.Bottom - to,
-                SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE);
-            WinUserApi.SetWindowLong(hwnd, WindowLongFieldOffset.GWL_STYLE, style);
-            WinUserApi.SetWindowPlacement(hwnd, ref placement);
         }
 
         /// <summary>

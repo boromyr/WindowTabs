@@ -66,23 +66,14 @@ type TabStripDecorator(group:WindowGroup) as this =
 
         group.removed.Add <| fun hwnd ->
             Win32Helper.SetCaptionHidden(hwnd, false)
-            Win32Helper.SetMaximizedTitleBarExtended(hwnd, false)
-
-        // Windows may put a maximized window back in its standard place
-        group.topMoved.Add <| fun() ->
-            this.updateTsPlacement()
 
         Services.settings.notifyValue "tabsInTitleBar" <| fun _ ->
             this.invokeAsync <| fun() ->
                 this.updateHiddenCaptions()
-                if this.tabsInTitleBar.not then
-                    group.windows.items.iter <| fun hwnd -> Win32Helper.SetMaximizedTitleBarExtended(hwnd, false)
                 this.updateTsPlacement()
 
         group.exited.Add <| fun() ->
-            group.windows.items.iter <| fun hwnd ->
-                Win32Helper.SetCaptionHidden(hwnd, false)
-                Win32Helper.SetMaximizedTitleBarExtended(hwnd, false)
+            group.windows.items.iter <| fun hwnd -> Win32Helper.SetCaptionHidden(hwnd, false)
             Services.dragDrop.unregisterTarget(this.ts.hwnd)
     
 
@@ -93,18 +84,7 @@ type TabStripDecorator(group:WindowGroup) as this =
     member private this.updateTsSlide() =
         this.ts.slide <- this.tabSlide
 
-    /// Gives the maximized windows of the group a title bar as high as when they are not
-    /// maximized (Windows hides its top above the screen), so the tabs keep their height.
-    /// Only windows with a standard title bar, which is where the tabs go.
-    member private this.extendMaximizedTitleBars() =
-        if this.tabsInTitleBar then
-            group.windows.items.iter <| fun hwnd ->
-                let mutable bounds = Rectangle.Empty
-                if WinUserApi.IsZoomed(hwnd) && Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    Win32Helper.SetMaximizedTitleBarExtended(hwnd, true)
-
     member private this.updateTsPlacement() = 
-        this.extendMaximizedTitleBars()
         if group.bounds.value.IsNone then
             this.ts.visible <- false
         else
@@ -141,11 +121,10 @@ type TabStripDecorator(group:WindowGroup) as this =
             group.zorder.value.tryHead.bind <| fun hwnd ->
                 let mutable bounds = Rectangle.Empty
                 if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    let margin, right = Dpi.px 3, Dpi.px 4
+                    let margin, top, right = Dpi.px 3, Dpi.px 2, Dpi.px 4
                     // The window's own icon is drawn even when asked not to, so the tabs must cover it.
                     // A bordered window's icon starts past the margin; a maximized one has no border and
                     // its icon starts at the screen edge, so there the margin is painted over instead.
-                    let top = Dpi.px 2
                     let left, leading =
                         if WinUserApi.IsZoomed(hwnd) then 0, Some(margin, this.captionColor hwnd bounds)
                         else margin, None

@@ -22,7 +22,6 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
     let flashEvent = Event<_>()
     let keyboardLLEvent = Event<Int32 * KBDLLHOOKSTRUCT>()
     let foregroundEvent = Event<_>()
-    let topMovedEvent = Event<unit>()
 
     let isDestroyed = Cell.create(false)
     let zorderCell = Cell.create(List2<IntPtr>())
@@ -382,7 +381,6 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
                         this.makeTopWindowForeground()
                     this.foreground <- this.os.foreground.hwnd
                     isMaximizedExport.update()
-                    topMovedEvent.Trigger()
         | WinEvent.EVENT_SYSTEM_FOREGROUND ->
             this.foreground <- hwnd
             this.saveZorder()
@@ -514,8 +512,6 @@ type WindowGroup(enableSuperBar:bool, plugins:List2<IPlugin>) as this =
     member this.added = addedEvent.Publish
     member this.moved = movedEvent.Publish
     member this.foregroundChanged = foregroundEvent.Publish
-    /// The top window moved or changed size, other than by the user dragging it.
-    member this.topMoved = topMovedEvent.Publish
     member this.flash = flashEvent.Publish
     member this.removed = removedEvent.Publish
     member this.lorder = this.ts.lorder.map(fun(Tab(hwnd)) -> hwnd)
