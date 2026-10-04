@@ -23,6 +23,9 @@ and TabStripPlacment = {
     // drawn over the window's own title bar
     inTitleBar: bool
     bounds: Rect
+    // space left of the first tab, painted in this color to hide what is underneath
+    leading: int
+    leadingColor: Color
     }
 
 and TabPart =

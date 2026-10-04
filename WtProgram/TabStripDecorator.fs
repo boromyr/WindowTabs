@@ -11,6 +11,8 @@ type TabStripDecorator(group:WindowGroup) as this =
     let isDraggingCell = Cell.create(false)
     let dragInfoCell = Cell.create(None)
     let dragPtCell = Cell.create(Pt.empty)
+    let mutable lastCaptionColor : Color option = None
+    let mutable captionColorRetry : IDisposable option = None
     let dropTarget = Cell.create(None)
     let mouseEvent = Event<_>()
     let _ts = TabStrip(this :> ITabStripMonitor)
@@ -94,17 +96,40 @@ type TabStripDecorator(group:WindowGroup) as this =
 
     member private this.tabsInTitleBar = Services.settings.getValue("tabsInTitleBar").cast<bool>()
 
+    /// The color of the window's title bar, read from the screen just left of its caption
+    /// buttons (the tabs leave that spot uncovered). While another window covers that spot,
+    /// it is the last color read, or the default title bar color, and it is read again shortly.
+    member private this.captionColor (hwnd:IntPtr) (titleBar:Rectangle) =
+        let pt = Point(titleBar.Right - Dpi.px 2, titleBar.Y + titleBar.Height / 2)
+        if Win32Helper.GetTopLevelWindowFromPoint(pt) = hwnd then
+            let color = Win32Helper.GetScreenPixel(pt)
+            lastCaptionColor <- Some(color)
+            color
+        else
+            if captionColorRetry.IsNone then
+                captionColorRetry <- Some(ThreadHelper.cancelablePostBack 1000 <| fun() ->
+                    captionColorRetry <- None
+                    this.invokeAsync <| fun() -> this.updateTsPlacement())
+            match lastCaptionColor with
+            | Some(color) -> color
+            | None -> if FluentTheme.IsSystemLightTheme() then Color.FromArgb(0xF3, 0xF3, 0xF3) else Color.FromArgb(0x20, 0x20, 0x20)
+
     // The part of the top window's title bar left of its caption buttons, for windows
-    // that have a standard (DWM-drawn) title bar.
+    // that have a standard (DWM-drawn) title bar, with the space to leave left of the tabs.
     member private this.titleBarBounds =
         if this.tabsInTitleBar && group.bounds.value.IsSome then
             group.zorder.value.tryHead.bind <| fun hwnd ->
                 let mutable bounds = Rectangle.Empty
                 if Win32Helper.TryGetTitleBarBounds(hwnd, &bounds) then
-                    // just inside the window's border, so the tabs still cover the window's own icon
-                    let left, top, right = Dpi.px 3, Dpi.px 2, Dpi.px 4
+                    let margin, top, right = Dpi.px 3, Dpi.px 2, Dpi.px 4
+                    // The window's own icon is drawn even when asked not to, so the tabs must cover it.
+                    // A bordered window's icon starts past the margin; a maximized one has no border and
+                    // its icon starts at the screen edge, so there the margin is painted over instead.
+                    let left, leading =
+                        if WinUserApi.IsZoomed(hwnd) then 0, Some(margin, this.captionColor hwnd bounds)
+                        else margin, None
                     let rect = Rect(Pt(bounds.X + left, bounds.Y + top), Sz(bounds.Width - left - right, bounds.Height - top))
-                    if rect.size.width > 0 && rect.size.height > 0 then Some(rect) else None
+                    if rect.size.width > 0 && rect.size.height > 0 then Some(rect, leading) else None
                 else None
         else None
 
@@ -114,7 +139,14 @@ type TabStripDecorator(group:WindowGroup) as this =
 
     member this.placement =
         match this.titleBarBounds with
-        | Some(bounds) -> { showInside = false; inTitleBar = true; bounds = bounds }
+        | Some(bounds, leading) ->
+            {
+                showInside = false
+                inTitleBar = true
+                bounds = bounds
+                leading = leading |> Option.map fst |> Option.defaultValue 0
+                leadingColor = leading |> Option.map snd |> Option.defaultValue Color.Transparent
+            }
         | None -> this.windowEdgePlacement
 
     member private this.windowEdgePlacement =
@@ -130,6 +162,8 @@ type TabStripDecorator(group:WindowGroup) as this =
             showInside = decorator.shouldShowInside
             inTitleBar = false
             bounds = decorator.bounds
+            leading = 0
+            leadingColor = Color.Transparent
         }
 
     member this.beginRename(hwnd) =

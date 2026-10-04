@@ -183,6 +183,9 @@ type TabStripSprite<'id> when 'id : equality = {
     direction: TabDirection
     transparent: bool
     onlyIcons: bool
+    // space left of the first tab, painted opaque in leadingColor
+    leading: int
+    leadingColor: Color
     } with
 
     // rounded tabs sit side by side with a small gap instead of overlapping
@@ -231,10 +234,13 @@ type TabStripSprite<'id> when 'id : equality = {
                 (gr, bmp)   
         let bounds = Rect(Pt(), this.size)
         do  gr.FillRectangle(new SolidBrush(bgColor), bounds.Rectangle)
+        if this.leading > 0 then
+            // also under the first tab's rounded corners, which would otherwise let it show through
+            do gr.FillRectangle(new SolidBrush(this.leadingColor), Rectangle(0, 0, this.leading + Dpi.px 8, this.size.height))
         img.img
 
     member private this.tabLengthWithOverlap tabOverlap =
-        let tsWidth = float(this.size.width)
+        let tsWidth = float(this.size.width - this.leading)
         let tsWidth =
             if this.count < 2 then tsWidth 
             else 
@@ -246,7 +252,7 @@ type TabStripSprite<'id> when 'id : equality = {
 
     member private this.tabOffset index =
         let tabOffset = this.tabLength - this.tabOverlap
-        float(index) * tabOffset
+        float(this.leading) + float(index) * tabOffset
 
     member private this.alignmentOffset =
         let lastIndex = this.count - 1
@@ -260,7 +266,7 @@ type TabStripSprite<'id> when 'id : equality = {
     member this.tabLocation tab =
         match this.slide with
         | Some(slideTab, x) when tab = slideTab-> 
-            let bounds = (0, this.size.width - int(this.tabLength))
+            let bounds = (this.leading, this.size.width - int(this.tabLength))
             Pt(between bounds x, 1)
         | _ -> 
             let x = this.tabOffset (this.adjustedLorder.findIndex((=)tab))
@@ -276,7 +282,7 @@ type TabStripSprite<'id> when 'id : equality = {
                 if this.count = 0 then 0
                 else
                     let x = float(x)
-                    let x = x - this.alignmentOffset
+                    let x = x - this.alignmentOffset - float(this.leading)
                     let mid = x + this.tabLength / 2.0
                     int((mid - this.tabOverlap / 2.0) / (this.tabLength - this.tabOverlap))
             Some(tab, index)

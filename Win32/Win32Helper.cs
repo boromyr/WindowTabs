@@ -306,6 +306,27 @@ namespace Bemo
             }
         }
 
+        [DllImport("user32.dll")]
+        static extern IntPtr GetDC(IntPtr hwnd);
+        [DllImport("user32.dll")]
+        static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+        [DllImport("gdi32.dll")]
+        static extern uint GetPixel(IntPtr hdc, int x, int y);
+
+        /// <summary>
+        /// The color shown on the screen at the point.
+        /// </summary>
+        public static Color GetScreenPixel(Point pt)
+        {
+            IntPtr hdc = GetDC(IntPtr.Zero);
+            try
+            {
+                uint colorRef = GetPixel(hdc, pt.X, pt.Y);
+                return Color.FromArgb((int)(colorRef & 0xFF), (int)((colorRef >> 8) & 0xFF), (int)((colorRef >> 16) & 0xFF));
+            }
+            finally { ReleaseDC(IntPtr.Zero, hdc); }
+        }
+
         [DllImport("dwmapi.dll")]
         static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
         const int DWMWA_CLOAKED = 14;

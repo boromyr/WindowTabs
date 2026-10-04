@@ -1,4 +1,4 @@
-namespace Bemo
+﻿namespace Bemo
 open System
 open System.Collections
 open System.Drawing
@@ -34,6 +34,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     let transparentCell = Cell.create(true)
     let showInsideCell = Cell.create(false)
     let inTitleBarCell = Cell.create(false)
+    let leadingCell = Cell.create((0, Color.Transparent))
     let isInAltTabCell = Cell.create(false)
     let iconOnlyCell = Cell.create(false)
     let alignmentMap = 
@@ -120,6 +121,8 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             alignment = alignment.value.find direction
             onlyIcons = this.isIconOnly
             transparent = this.transparent
+            leading = fst leadingCell.value
+            leadingColor = snd leadingCell.value
             appearance = 
                 if this.isIconOnly then
                     { this.appearance with tabMaxWidth = Dpi.px 50 }
@@ -352,6 +355,7 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     member this.setPlacement(placement) =
         showInsideCell.set(placement.showInside)
         inTitleBarCell.set(placement.inTitleBar)
+        leadingCell.set((placement.leading, placement.leadingColor))
         sizeCell.set(placement.bounds.size)
         locationCell.set(placement.bounds.location)   
      

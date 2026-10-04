@@ -100,6 +100,24 @@ namespace Bemo.Win32.Forms
             return Color.FromArgb(96, 205, 255);
         }
 
+        /// <summary>
+        /// Whether apps are set to the light theme in Windows settings.
+        /// </summary>
+        public static bool IsSystemLightTheme()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    return key?.GetValue("AppsUseLightTheme") is int light && light != 0;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static readonly float SystemScale = GetSystemScale();
 
         private static float GetSystemScale()
