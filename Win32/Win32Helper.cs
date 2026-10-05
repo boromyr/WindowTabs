@@ -5,6 +5,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Reflection;
@@ -476,9 +477,7 @@ namespace Bemo
                 using (System.IO.Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
                 using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create))
                 {
-                    byte[] b = new byte[s.Length];
-                    s.Read(b, 0, b.Length);
-                    fs.Write(b, 0, b.Length);
+                    s.CopyTo(fs);
                 }
         }
     }
@@ -497,6 +496,7 @@ namespace Bemo
         /// <remarks>
         /// Default value is false, which is the same behavior provided by the base ToolStrip class.
         /// </remarks>
+        [DefaultValue(false)]
         public bool ClickThrough
         {
             get

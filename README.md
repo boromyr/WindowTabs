@@ -34,7 +34,7 @@ Any help is very welcome. Feel free to create issues or pull requests. If you'd 
 
 ## Compilation
 
-Tested on Win10 with Visual Studio 2019 or 2022.
+The project targets **.NET 10** (`net10.0-windows`, WinForms + F#), **Windows x64 only**. UI languages: English and Italian. Running it requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
 
 - Clone
 
@@ -44,25 +44,37 @@ Tested on Win10 with Visual Studio 2019 or 2022.
 
 - Install
 
-    - [Visual Studio 2022 community edition](https://visualstudio.microsoft.com/)
+    - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+    - Optional: [Visual Studio 2026](https://visualstudio.microsoft.com/) with `.NET desktop development` and F# support
+    - Optional, to open the installer project in Visual Studio: the FireGiant HeatWave extension (WiX v6). The WiX toolset itself is restored from NuGet, no separate install is needed.
 
-        `.NET desktop development` needs to be selected in the installer.
+- Build
 
-    - [WiX Toolset build tools V3.14.1](https://wixtoolset.org/docs/wix3/)
+    ```
+    dotnet build WtProgram -c Release
+    ```
 
-    - [WiX Toolset Visual Studio 2022 Extension](https://marketplace.visualstudio.com/items?itemName=WixToolset.WixToolsetVisualStudio2022Extension)
+    Output: `WtProgram\bin\Release\net10.0-windows\WindowTabs.exe`. Use `-c Debug` for a debug build.
 
-> You need to close Visual Studio first to install the extension. Visual Studio 2019 and its WiX extension also work.
+- Single-file exe
 
-- Compile and Release
+    ```
+    dotnet publish WtProgram -c Release
+    ```
 
-    Launch Visual Studio, open this project by "File > Open > Project/Solution", and select "WindowTabs.sln".
+    Output: `WtProgram\bin\Release\net10.0-windows\win-x64\publish\WindowTabs.exe`. Add `-p:SelfContained=true` to bundle the .NET runtime (no runtime install needed, much bigger exe).
 
-    If you choose the `Release` configuration and click `Start`, you will get a release version `WindowTabs\WtProgram\bin\Release\WindowTabs.exe`.
+- Installer (MSI, Windows only)
 
-- Debug
+    ```
+    dotnet build WtSetup\WtSetup.wixproj -c Release
+    ```
 
-    Choose the `Debug` configuration and it will compile to `WindowTabs\WtProgram\bin\Debug\WindowTabs.exe`.
+    Output: `WtSetup\bin\x64\Release\WtSetup.msi`.
+
+- Visual Studio
+
+    Open `WindowTabs.sln`, choose `Debug` or `Release` and click `Start`.
 
 Tips
 

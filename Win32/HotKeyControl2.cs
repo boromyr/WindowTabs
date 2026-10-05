@@ -24,12 +24,12 @@ namespace Bemo.Win32
         private ArrayList needNonShiftModifier = null;
         private ArrayList needNonAltGrModifier = null;
 
-        private ContextMenu dummy = new ContextMenu();
+        private ContextMenuStrip dummy = new ContextMenuStrip();
 
         /// <summary>
         /// Used to make sure that there is no right-click menu available
         /// </summary>
-        public override ContextMenu ContextMenu
+        public override ContextMenuStrip ContextMenuStrip
         {
             get
             {
@@ -37,7 +37,7 @@ namespace Bemo.Win32
             }
             set
             {
-                base.ContextMenu = dummy;
+                base.ContextMenuStrip = dummy;
             }
         }
 
@@ -62,7 +62,7 @@ namespace Bemo.Win32
         /// </summary>
         public HotKeyControl2()
         {
-            this.ContextMenu = dummy; // Disable right-clicking
+            this.ContextMenuStrip = dummy; // Disable right-clicking
             this.Text = "None";
 
             // Handle events that occurs when keys are pressed
@@ -199,6 +199,7 @@ namespace Bemo.Win32
         /// <summary>
         /// Used to get/set the hotkey (e.g. Keys.A)
         /// </summary>
+        [System.ComponentModel.DefaultValue(Keys.None)]
         public Keys Hotkey
         {
             get
@@ -215,6 +216,7 @@ namespace Bemo.Win32
         /// <summary>
         /// Used to get/set the modifier keys (e.g. Keys.Alt | Keys.Control)
         /// </summary>
+        [System.ComponentModel.DefaultValue(Keys.None)]
         public Keys HotkeyModifiers
         {
             get

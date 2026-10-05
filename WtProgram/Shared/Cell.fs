@@ -104,7 +104,7 @@ type CellScope(?checkForSetDuringUpdate,?checkTid) =
 
     member this.clearThis (o:obj) =
         let hash = o.GetHashCode()
-        _objCache.Keys.list.where(fst >> (=) hash).iter(fun key -> _objCache.Remove(key).ignore)
+        _objCache.Keys.list().where(fst >> (=) hash).iter(fun key -> _objCache.Remove(key).ignore)
 
     member this.create init = Cell<_>(this, init)
 

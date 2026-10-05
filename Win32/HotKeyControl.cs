@@ -10,6 +10,7 @@ namespace Bemo.Win32
         public HotKeyControl()
         {
         }
+        [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
         public int HotKey
         {
             set

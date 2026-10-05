@@ -19,7 +19,7 @@ module ImgHelper =
         img.resize(Sz(16,16)).bitmap :> Image
 
 
-type ExeNode(procPath) =
+type ExeNode(procPath:string) =
     inherit Node(Path.GetFileName(procPath))
     let icon = 
         let procIcon = Win32Helper.GetFileIcon(procPath)
@@ -63,9 +63,11 @@ type ProgramView() as this=
         ts.Items.Add(refreshBtn).ignore
         ts.Font <- font
         ts
+    let statusLabel = ToolStripStatusLabel("Ready")
     let statusBar = 
-        let sb = StatusBar()
-        sb.Text <- "Ready"
+        let sb = StatusStrip()
+        sb.SizingGrip <- false
+        sb.Items.Add(statusLabel).ignore
         sb.Font <- font
         sb
     let tree,model = 
@@ -133,7 +135,7 @@ type ProgramView() as this=
             let os = OS()
             let procs = Services.program.appWindows.fold (Map2()) <| fun procs hwnd ->
                 invoker.asyncInvoke <| fun() ->
-                    statusBar.Text <- sprintf "Scanning window 0x%x" hwnd
+                    statusLabel.Text <- sprintf "Scanning window 0x%x" hwnd
                 let window = os.windowFromHwnd(hwnd)
                 let procPath = window.pid.processPath
                 procs.add procPath (procs.tryFind(procPath).def(List2()).append(window))
@@ -147,7 +149,7 @@ type ProgramView() as this=
             invoker.asyncInvoke <| fun() ->
                 model.Nodes.Clear()
                 procNodes.sortBy(fun n -> n.Text).iter <| fun node -> model.Nodes.Add(node)
-                statusBar.Text <- "Ready"
+                statusLabel.Text <- "Ready"
 
     interface ISettingsView with
         member x.key = SettingsViewType.ProgramSettings

@@ -7,3 +7,5 @@ Debug/
 /.vs/WindowTabs/v15
 .vs
 WtProgram/obj
+bin/
+obj/

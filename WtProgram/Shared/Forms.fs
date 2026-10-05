@@ -24,4 +24,5 @@ module Forms =
          
     let openFeedback() =
         let sInfo = new ProcessStartInfo("https://windowtabs.uservoice.com/")
+        sInfo.UseShellExecute <- true
         Process.Start(sInfo).ignore

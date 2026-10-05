@@ -264,7 +264,7 @@ type WorkspaceModel() as this =
     do
         Observable.init(this)
 
-    member this.workspaces =  _workspaces.list
+    member this.workspaces =  _workspaces.list()
     member this.workspaceAdded = workspaceAddedEvt.Publish
 
     member this.selected

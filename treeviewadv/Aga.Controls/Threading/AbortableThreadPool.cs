@@ -88,14 +88,8 @@ namespace Aga.Controls.Threading
 				}
 				else if (_threads.ContainsKey(item))
 				{
-					if (allowAbort)
-					{
-						_threads[item].Abort();
-						_threads.Remove(item);
-						return WorkItemStatus.Aborted;
-					}
-					else
-						return WorkItemStatus.Executing;
+					// Thread.Abort is not supported on .NET (Core): a running item can only finish on its own.
+					return WorkItemStatus.Executing;
 				}
 				else
 					return WorkItemStatus.Completed;
@@ -106,12 +100,9 @@ namespace Aga.Controls.Threading
 		{
 			lock (_callbacks)
 			{
+				// Thread.Abort is not supported on .NET (Core): only queued items are cancelled,
+				// running ones are left to complete.
 				_callbacks.Clear();
-				if (allowAbort)
-				{
-					foreach (Thread t in _threads.Values)
-						t.Abort();
-				}
 			}
 		}
 	}

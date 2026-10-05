@@ -3,9 +3,6 @@ open System
 open System.Drawing
 open System.Reflection
 open System.Collections.Generic
-open System.Reflection
-open System.Runtime.Remoting.Proxies
-open System.Runtime.Remoting.Messaging
 
 type ServiceAsyncResult() as this =
     let returnInvoker = InvokerService.invoker
@@ -29,20 +26,22 @@ type ServiceAsyncResult() as this =
                 cachedfCompleted <- Some(fCompleted)
                 this.tryToComplete()
 
-type ServiceProxy<'a>(service:'a) =
-    inherit RealProxy(typeof<'a>)
+// DispatchProxy replaces the .NET Framework only RealProxy/transparent proxy.
+// The proxy type must be public, non sealed and have a parameterless constructor.
+type ServiceProxy() =
+    inherit DispatchProxy()
     let attributeCache = new Dictionary<int, ServiceMethodAttribute>()
 
     let invoker = InvokerService.invoker
-    
-    member private this.returnMessage(msg : IMessage, result : obj) =
-        let mcm = msg :?> IMethodCallMessage
-        ReturnMessage(result, null, 0, mcm.LogicalCallContext, mcm) :> IMessage
 
-    member private this.methodInfo(msg: IMessage) =
-        let mcm = msg :?> IMethodCallMessage
-        mcm.MethodBase :?> MethodInfo
-    
+    [<DefaultValue>]
+    val mutable private service : obj
+
+    static member create<'a>(service:'a) =
+        let proxy = DispatchProxy.Create(typeof<'a>, typeof<ServiceProxy>) :?> ServiceProxy
+        proxy.service <- box(service)
+        box(proxy)
+
     member private this.serviceMethodAttributeCached(mi:MethodInfo) =
         let key = mi.MetadataToken
         lock this <| fun() ->
@@ -52,39 +51,31 @@ type ServiceProxy<'a>(service:'a) =
                 attributeCache.Add(key, sma)
             attributeCache.Item(key)
 
-    member private this.serviceMethodAttribute<'s>(msg: IMessage) =
-        let mi = this.methodInfo(msg)
-        this.serviceMethodAttributeCached mi
+    member private this.invokeMethod(mi:MethodInfo, args:obj[]) =
+        mi.Invoke(this.service, args)
 
-    member private this.invokeMethod(msg : IMessage) =
-        let mcm = msg :?> IMethodCallMessage
-        let mi = this.methodInfo(msg)
-        mi.Invoke(service, mcm.InArgs)
+    member private this.isUnitReturnType(mi:MethodInfo) =
+        mi.ReturnType = typeof<unit> || mi.ReturnType = typeof<Void>
 
-    member private this.isUnitReturnType(msg: IMessage) =
-        this.methodInfo(msg).ReturnType = typeof<unit>
-
-    member private this.doSyncInvoke(msg: IMessage) =
+    member private this.doSyncInvoke(mi:MethodInfo, args:obj[]) : obj =
         invoker.invoke <| fun() ->
-            this.invokeMethod(msg)
+            this.invokeMethod(mi, args)
 
-    member private this.doAsyncInvoke(msg: IMessage) =  
+    member private this.doAsyncInvoke(mi:MethodInfo, args:obj[]) : obj =
         let asyncResult = ServiceAsyncResult()
 
         invoker.asyncInvoke <| fun() -> 
-            let result = this.invokeMethod(msg)
+            let result = this.invokeMethod(mi, args)
             asyncResult.complete(result)
 
-        if this.isUnitReturnType(msg) then null else box(asyncResult)
+        if this.isUnitReturnType(mi) then null else box(asyncResult)
 
-    override this.Invoke(msg) =
-        let sma = this.serviceMethodAttribute(msg)
-        let result = 
-            if sma.async then
-                this.doAsyncInvoke(msg)
-            else
-                this.doSyncInvoke(msg)
-        this.returnMessage(msg, result)
+    override this.Invoke(mi, args) =
+        let sma = this.serviceMethodAttributeCached(mi)
+        if sma.async then
+            this.doAsyncInvoke(mi, args)
+        else
+            this.doSyncInvoke(mi, args)
 
 type ServiceProvider() =
     [<DefaultValue>]
@@ -102,8 +93,7 @@ type ServiceProvider() =
     member this.register(service:'a, wrap) =
         let service = 
             if wrap then
-                let rp = new ServiceProxy<'a>(service)
-                rp.GetTransparentProxy()
+                ServiceProxy.create<'a>(service)
             else
                 box(unbox<'a>(service))
         services.Add(typeof<'a>, service)

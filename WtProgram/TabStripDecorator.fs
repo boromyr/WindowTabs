@@ -114,7 +114,7 @@ type TabStripDecorator(group:WindowGroup) as this =
         form.textBox.LostFocus.Add <| fun _ ->
             form.Close()
         group.bb.write("renamingTab", true)
-        form.Closed.Add <| fun _ ->
+        form.FormClosed.Add <| fun _ ->
             group.bb.write("renamingTab", false)
         form.Show()
 
@@ -182,7 +182,7 @@ type TabStripDecorator(group:WindowGroup) as this =
                 text = "New window"
                 flags = List2()
                 image = None
-                click = fun() -> Process.Start(processPath) |> ignore
+                click = fun() -> Process.Start(ProcessStartInfo(processPath, UseShellExecute = true)) |> ignore
             })
 
         let combineIconsInTaskbar =

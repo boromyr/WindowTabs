@@ -57,8 +57,9 @@ type DiagnosticsView() as this =
         ts.Font <- font
         ts
     let statusBar = 
-        let sb = StatusBar()
-        sb.Text <- "Ready"
+        let sb = StatusStrip()
+        sb.SizingGrip <- false
+        sb.Items.Add(ToolStripStatusLabel("Ready")).ignore
         sb.Dock <- DockStyle.Bottom
         sb.Font <- font
         sb

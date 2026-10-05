@@ -113,9 +113,8 @@ type Program() as this =
         let key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true)
         let keyName = "WindowTabs"
         if runAtStartup then
-            let entryAssembly = System.Reflection.Assembly.GetEntryAssembly()
-            let exeUri = Uri(entryAssembly.CodeBase)
-            key.SetValue(keyName, sprintf "\"%s\"" exeUri.LocalPath)
+            // Environment.ProcessPath is the .exe (apphost / single-file), not WindowTabs.dll
+            key.SetValue(keyName, sprintf "\"%s\"" Environment.ProcessPath)
         else
             key.DeleteValue(keyName, false)
 
@@ -375,6 +374,10 @@ type Program() as this =
             | :? IDisposable as d -> d.Dispose()
             | _ -> ()
 
+// Keep the .NET Framework behaviour: the app was DPI unaware (no manifest) and used the system default UI font
+// (.NET Core changed Control.DefaultFont to Segoe UI 9pt)
+Application.SetHighDpiMode(HighDpiMode.DpiUnaware) |> ignore
+Application.SetDefaultFont(SystemFonts.DefaultFont)
 Application.SetCompatibleTextRenderingDefault(false)
 let program = Program()
 program.run(List2<obj>([

@@ -21,11 +21,11 @@ type Dynamic(?target:obj) as this =
     
     member this.target = _target
     member this.targetType = this.target.GetType()
-    member this.interfaces = this.targetType.GetInterfaces().list
+    member this.interfaces = this.targetType.GetInterfaces().list()
     member this.properties =
         let interfaceProperties = this.interfaces.collect <| fun(iType) ->
-            iType.GetProperties().list
-        let typeProperties = this.targetType.GetProperties().list
+            iType.GetProperties().list()
+        let typeProperties = this.targetType.GetProperties().list()
         typeProperties.appendList(interfaceProperties)
 
     member this.hasExpandoValue name =
@@ -54,14 +54,14 @@ type Dynamic(?target:obj) as this =
     member this.findMethodInInterface(name, args:obj[]) =
         this.interfaces.tryPick <| fun iType ->
             let map = this.targetType.GetInterfaceMap(iType)
-            map.TargetMethods.list.zip(map.InterfaceMethods.list).tryPick <| fun (tm, im) ->
+            map.TargetMethods.list().zip(map.InterfaceMethods.list()).tryPick <| fun (tm, im) ->
                 if this.isMatchingMethod(im, name, args) then
                     Some(tm)
                 else
                     None
 
     member this.findMethodInType(name, args:obj[]) =
-        this.targetType.GetMethods(instanceFlags).list.tryFind <| fun m ->
+        this.targetType.GetMethods(instanceFlags).list().tryFind <| fun m ->
             this.isMatchingMethod(m, name, args)
 
     member this.findMethod(name, args:obj[]) =
