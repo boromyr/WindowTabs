@@ -16,6 +16,9 @@
     <Compile Remove="AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="10.1.401" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
