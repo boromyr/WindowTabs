@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Release unless a configuration is chosen explicitly (dotnet build -c Debug, or Visual Studio) -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <!-- Everything the build produces goes under build\: the program as build\WindowTabs.exe,
+         intermediate files in build\bin and build\obj -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)build</ArtifactsPath>
+  </PropertyGroup>
+</Project>

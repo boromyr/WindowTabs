@@ -113,9 +113,7 @@ type Program() as this =
         let key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true)
         let keyName = "WindowTabs"
         if runAtStartup then
-            let entryAssembly = System.Reflection.Assembly.GetEntryAssembly()
-            let exeUri = Uri(entryAssembly.CodeBase)
-            key.SetValue(keyName, sprintf "\"%s\"" exeUri.LocalPath)
+            key.SetValue(keyName, sprintf "\"%s\"" Environment.ProcessPath)
         else
             key.DeleteValue(keyName, false)
 
@@ -385,7 +383,11 @@ type Program() as this =
 
 // Without this Windows renders the tabs at 96 DPI and stretches them, which looks blurry
 // on scaled displays. Sizes are scaled explicitly through the Dpi module instead.
-WinUserApi.SetProcessDPIAware()
+// (Same as the SetProcessDPIAware call this used on .NET Framework.)
+Application.SetHighDpiMode(HighDpiMode.SystemAware) |> ignore
+// .NET Core changed Control.DefaultFont to Segoe UI 9pt; keep the system GUI font the
+// designer-made forms were laid out for
+Application.SetDefaultFont(SystemFonts.DefaultFont)
 Application.SetCompatibleTextRenderingDefault(false)
 let program = Program()
 program.run(List2<obj>([

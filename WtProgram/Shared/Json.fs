@@ -11,25 +11,31 @@ module JObjectHelper =
             if this.ContainsKey(key) then Some(this.Item(key)) else None
 
     type JObject with 
+        // JObject has had its own GetValue(string) since Json.NET 4.5, which hides the
+        // IDictionary extension above
+        member this.tryGetValue(key:string) =
+            match this.TryGetValue(key) with
+            | true, value -> Some(value)
+            | _ -> None
         member this.items = List2(this:>IDictionary<_,_>).map(fun pair -> pair.Key,pair.Value)
-        member this.getString(key) = this.GetValue(key).map(fun t -> unbox<string>((t :?> JValue).Value))
-        member this.getBool(key) = this.GetValue(key).map(fun t -> unbox<bool>((t :?> JValue).Value))
-        member this.getInt32(key) = this.GetValue(key).map(fun t -> unbox<int64>((t :?> JValue).Value).Int32)
-        member this.getIntPtr(key) = this.GetValue(key).map(fun t -> IntPtr(unbox<int64>((t :?> JValue).Value)))
+        member this.getString(key) = this.tryGetValue(key).map(fun t -> unbox<string>((t :?> JValue).Value))
+        member this.getBool(key) = this.tryGetValue(key).map(fun t -> unbox<bool>((t :?> JValue).Value))
+        member this.getInt32(key) = this.tryGetValue(key).map(fun t -> unbox<int64>((t :?> JValue).Value).Int32)
+        member this.getIntPtr(key) = this.tryGetValue(key).map(fun t -> IntPtr(unbox<int64>((t :?> JValue).Value)))
         member this.getPt(key) = Pt(this.getInt32("x").Value, this.getInt32("y").Value)
         member this.getSz(key) = Sz(this.getInt32("width").Value, this.getInt32("height").Value)
         member this.getRect(key) = Rect(this.getPt("location"), this.getSz("size"))
         member this.getArray<'t>(key) =
             let parse(token:JToken) =
                 List2(token :?> JArray).map(fun t -> unbox<'t>((t :?> JValue).Value))
-            this.GetValue(key).map(parse)
+            this.tryGetValue(key).map(parse)
         member this.getObjectArray(key) = 
             let parse(token:JToken) =
                 List2(token :?> JArray).map(fun t -> t :?> JObject)
-            this.GetValue(key).map(parse)
+            this.tryGetValue(key).map(parse)
         member this.getStringArray(key) = this.getArray<string>(key)
         member this.getInt32Array(key) = this.getArray<Int64>(key).map(fun l -> l.map(int32))
-        member this.getObject(key) = this.GetValue(key).map(fun t -> unbox<JObject>(t))
+        member this.getObject(key) = this.tryGetValue(key).map(fun t -> unbox<JObject>(t))
         member this.update(key:string, token:JToken option) =
             match token with
             | Some(token) ->

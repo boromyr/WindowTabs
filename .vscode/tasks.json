@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "dotnet clean && dotnet build WtProgram/WtProgram.fsproj -c Release",
+            "command": "dotnet build",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

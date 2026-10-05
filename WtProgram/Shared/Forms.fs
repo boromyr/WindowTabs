@@ -23,5 +23,5 @@ module Forms =
         Services.managerView.show(SettingsViewType.LicenseSettings)
          
     let openFeedback() =
-        let sInfo = new ProcessStartInfo("https://windowtabs.uservoice.com/")
+        let sInfo = new ProcessStartInfo("https://windowtabs.uservoice.com/", UseShellExecute = true)
         Process.Start(sInfo).ignore

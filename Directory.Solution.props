@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Building the solution without -c picks Release too -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+  </PropertyGroup>
+</Project>

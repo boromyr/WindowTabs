@@ -8,7 +8,6 @@ open System.Text.RegularExpressions
 open System.Threading
 open System.Windows.Forms
 open System.Drawing
-open Microsoft.FSharp.Collections.Tagged
 
 type IProperty<'a> =
     abstract member value : 'a with get,set
@@ -173,9 +172,15 @@ type List2<'a>(?items) =
     member this.skip count = List2(Seq.toList(Seq.skip count items))
     member this.splitn idx = this.take idx, this.skip idx
 
-type Comparer<'a>()=
-    interface IComparer<'a> with
-        member x.Compare(a,b) = (box(a)).GetHashCode().CompareTo(box(b).GetHashCode())
+// Map2 and Set2 identify keys by hash code alone (two keys with the same hash are the
+// same key) and keep them ordered by it; they were built on the old PowerPack's Tagged
+// collections with a hash code comparer, and a Map keyed by the hash keeps that behavior.
+module HashKey =
+    let ofItem (a:'a) = box(a).GetHashCode()
+    // Like a set, adding an item that is already there keeps the existing one
+    let addItem (s:Map<int, 'a>) item =
+        let key = ofItem item
+        if s.ContainsKey(key) then s else s.Add(key, item)
 
 
 [<AutoOpen>]
@@ -234,39 +239,43 @@ module List2 =
             | None -> this
         member this.zip (l2:List2<_>) = List2(List.zip this.list l2.list)
 
-    type System.Collections.Generic.IEnumerable<'a> with
-        member this.list = List2(this)
+    // Since .NET 9 IEnumerable<'T> carries an "allows ref struct" constraint that F# type
+    // extensions cannot declare, so this is a C#-style extension method instead of a property.
+    [<System.Runtime.CompilerServices.Extension>]
+    type EnumerableExtensions =
+        [<System.Runtime.CompilerServices.Extension>]
+        static member list(this:IEnumerable<'a>) = List2(this)
 
     let distinct (this:List2<_>) = List2(Seq.toList(Seq.distinct (this.list)))    
      
-type Map2<'a, 'b> when 'a : equality (map) =
-    new(?l:List2<_>) = Map2<'a, 'b>(Tagged.Map<'a, 'b, Comparer<'a>>.Create(Comparer<'a>(),(defaultArg l (List2())).list))
-    member this.items : List2<'a * 'b> = List2(map.ToList())
-    member this.add key value = Map2(map.Add(key, value))
-    member this.remove key = Map2(map.Remove(key))
+type Map2<'a, 'b> when 'a : equality (map:Map<int, 'a * 'b>) =
+    new(?l:List2<_>) =
+        let items = (defaultArg l (List2())).list
+        Map2<'a, 'b>(items |> List.fold (fun (m:Map<_,_>) (key, value) -> m.Add(HashKey.ofItem key, (key, value))) Map.empty)
+    member this.items : List2<'a * 'b> = List2(map |> Seq.map (fun kv -> kv.Value) |> Seq.toList)
+    member this.add key value = Map2(map.Add(HashKey.ofItem key, (key, value)))
+    member this.remove key = Map2(map.Remove(HashKey.ofItem key))
     member this.removeWhereValue pred = Map2(this.items.choose(fun(key,value) -> if pred value then None else Some(key, value)))
-    member this.tryFind key = map.TryFind(key)
-    member this.contains key = map.ContainsKey(key)
-    member this.find key = map.Item(key)
+    member this.tryFind key = map.TryFind(HashKey.ofItem key) |> Option.map snd
+    member this.contains key = map.ContainsKey(HashKey.ofItem key)
+    member this.find key = snd (map.Item(HashKey.ofItem key))
     member this.keys = this.items.map(fst)
     member this.values = this.items.map(snd)
 
-type Set2<'a when 'a : equality>(set) =
-    new(?l:List2<_>) = Set2<'a>(Tagged.Set<'a, Comparer<'a>>.Create(Comparer<'a>(),(defaultArg l (List2())).list))
+type Set2<'a when 'a : equality>(set:Map<int, 'a>) =
+    new(?l:List2<_>) = Set2<'a>((defaultArg l (List2())).list |> List.fold HashKey.addItem Map.empty)
     member this.innerSet = set
-    member this.items = List2(set.ToList())
-    member this.add item = Set2(set.Add(item))
-    member this.remove item = Set2(set.Remove(item))
-    member this.contains item = set.Contains(item)
-    member this.isEmpty = this.items.isEmpty
+    member this.items = List2(set |> Seq.map (fun kv -> kv.Value) |> Seq.toList)
+    member this.add item = Set2(HashKey.addItem set item)
+    member this.remove item = Set2(set.Remove(HashKey.ofItem item))
+    member this.contains item = set.ContainsKey(HashKey.ofItem item)
+    member this.isEmpty = set.IsEmpty
     member this.toggle item = if this.contains item then this.remove item else this.add item
     member this.count = set.Count
     member this.sub (setToRemove:Set2<_>)=
-        let t,f = set.Partition(setToRemove.contains)
-        Set2(f)
+        Set2(set |> Map.filter (fun _ item -> setToRemove.contains item |> not))
     member this.union (setToAdd:Set2<'a>) = 
-        let s = Set<'a, Comparer<'a>>.Union(this.innerSet, setToAdd.innerSet)
-        Set2(s)
+        Set2(setToAdd.items.list |> List.fold HashKey.addItem this.innerSet)
     member this.map f = Set2(this.items.map(f))
 
 module Seq =

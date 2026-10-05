@@ -14,14 +14,14 @@ type NotifyIconPlugin() as this =
         notifyIcon.Visible <- true
         notifyIcon.Text <- "WindowTabs (version " + Services.program.version + ")"
         notifyIcon.Icon <- Services.openIcon("Bemo.ico")
-        notifyIcon.ContextMenu <- new ContextMenu()
+        notifyIcon.ContextMenuStrip <- new ContextMenuStrip()
         notifyIcon.DoubleClick.Add <| fun _ -> Services.managerView.show()
         notifyIcon
 
-    member this.contextMenuItems = this.icon.ContextMenu.MenuItems
+    member this.contextMenuItems = this.icon.ContextMenuStrip.Items
 
     member this.addItem(text, handler) =
-        this.contextMenuItems.Add(text, EventHandler(fun obj (e:EventArgs) -> handler())) |> ignore
+        this.contextMenuItems.Add(text, null, EventHandler(fun obj (e:EventArgs) -> handler())) |> ignore
 
     member this.onNewVersion() =
         this.icon.ShowBalloonTip(
@@ -36,7 +36,7 @@ type NotifyIconPlugin() as this =
         member this.init() =
             this.addItem(resources.GetString("Settings"), fun() -> Services.managerView.show())
             //this.addItem(resources.GetString("Feedback"), Forms.openFeedback) // 404 Not Found.
-            this.contextMenuItems.Add("-").ignore
+            this.contextMenuItems.Add(new ToolStripSeparator()).ignore
             this.addItem(resources.GetString("CloseWindowTabs"), fun() -> Services.program.shutdown())
             Services.program.newVersion.Add this.onNewVersion
 

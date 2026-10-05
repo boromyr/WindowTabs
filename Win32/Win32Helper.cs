@@ -15,7 +15,8 @@ namespace Bemo
     {
         public static int GetCurrentVersion()
         {
-            return FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileBuildPart;
+            // Read from the attribute: Assembly.Location is empty in a single-file publish
+            return Version.Parse(typeof(Win32Helper).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version).Build;
         }
         public static String FormatTitle(String title)
         {
@@ -633,11 +634,7 @@ namespace Bemo
             if (!System.IO.File.Exists(filename))
                 using (System.IO.Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
                 using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create))
-                {
-                    byte[] b = new byte[s.Length];
-                    s.Read(b, 0, b.Length);
-                    fs.Write(b, 0, b.Length);
-                }
+                    s.CopyTo(fs);
         }
     }
     /// <summary>
