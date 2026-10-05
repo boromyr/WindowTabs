@@ -74,8 +74,8 @@ type OS() as this=
     member this.getTaskbar() = if this.isWin7OrHigher then Some(ShellApi.GetTaskbar()) else None
     
     member this.isWin7OrHigher =
-        System.Environment.OSVersion.Version.Major >= 6 &&
-        System.Environment.OSVersion.Version.Minor >= 1
+        // .NET reports the real version (10.0 on Win10/11), so compare the whole version, not Major/Minor separately
+        System.Environment.OSVersion.Version >= Version(6, 1)
     
     member this.lockForeground() = WinUserApi.LockSetForegroundWindow(1)
     member this.unlockForeground() = WinUserApi.LockSetForegroundWindow(2).ignore

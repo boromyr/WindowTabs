@@ -97,6 +97,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Same culture-sensitive string behaviour as .NET Framework (NLS instead of ICU) -->
+    <RuntimeHostConfigurationOption Include="System.Globalization.UseNls" Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="10.1.401" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>

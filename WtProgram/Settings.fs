@@ -52,7 +52,7 @@ type Settings(isStandAlone) as this =
     member this.settingsJson
         with get() = 
             try
-                this.settingsString.map(JObject.Parse).def(JObject())
+                this.settingsString.map(parseJObject).def(JObject())
             with ex ->
                 let errorMessage = "Error loading settings.\n\nFix or remove the file "  + this.path + ".\n\nDetails: " + ex.Message
                 MessageBox.Show(errorMessage, "Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Warning) |> ignore

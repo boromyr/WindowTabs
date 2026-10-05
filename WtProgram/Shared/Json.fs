@@ -6,6 +6,17 @@ open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
 module JObjectHelper =
+    // Same as JObject.Parse but keeps ISO-8601 looking strings as strings, like Newtonsoft.Json 4.0
+    // did (newer versions turn them into DateTime, which breaks the unbox<string> reads below).
+    let parseJObject (json:string) =
+        use reader = new JsonTextReader(new IO.StringReader(json))
+        reader.DateParseHandling <- DateParseHandling.None
+        let obj = JObject.Load(reader)
+        while reader.Read() do
+            if reader.TokenType <> JsonToken.Comment then
+                raise(JsonReaderException("Additional text found in JSON string after finishing reading JSON."))
+        obj
+
     type System.Collections.Generic.IDictionary<'k,'v> with
         member this.GetValue(key) =
             if this.ContainsKey(key) then Some(this.Item(key)) else None
