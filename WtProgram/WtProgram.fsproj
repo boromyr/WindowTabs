@@ -7,6 +7,8 @@
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
+    <!-- Symbols inside the assemblies: publish output is just WindowTabs.exe -->
+    <DebugType>embedded</DebugType>
     <RootNamespace>WindowTabs</RootNamespace>
     <AssemblyName>WindowTabs</AssemblyName>
     <ApplicationIcon>Resources\Bemo.ico</ApplicationIcon>

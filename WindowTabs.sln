@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Win32", "Win32\Win32.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aga.Controls", "treeviewadv\Aga.Controls\Aga.Controls.csproj", "{E73BB233-D88B-44A7-A98F-D71EE158381D}"
 EndProject
-Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "WtSetup", "WtSetup\WtSetup.wixproj", "{B61AA43E-7ED6-43C7-ACA7-DA670689E8C4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -29,9 +27,6 @@ Global
 		{E73BB233-D88B-44A7-A98F-D71EE158381D}.Debug|x64.Build.0 = Debug|x64
 		{E73BB233-D88B-44A7-A98F-D71EE158381D}.Release|x64.ActiveCfg = Release|x64
 		{E73BB233-D88B-44A7-A98F-D71EE158381D}.Release|x64.Build.0 = Release|x64
-		{B61AA43E-7ED6-43C7-ACA7-DA670689E8C4}.Debug|x64.ActiveCfg = Debug|x64
-		{B61AA43E-7ED6-43C7-ACA7-DA670689E8C4}.Release|x64.ActiveCfg = Release|x64
-		{B61AA43E-7ED6-43C7-ACA7-DA670689E8C4}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -46,7 +46,6 @@ The project targets **.NET 10** (`net10.0-windows`, WinForms + F#), **Windows x6
 
     - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
     - Optional: [Visual Studio 2026](https://visualstudio.microsoft.com/) with `.NET desktop development` and F# support
-    - Optional, to open the installer project in Visual Studio: the FireGiant HeatWave extension (WiX v6). The WiX toolset itself is restored from NuGet, no separate install is needed.
 
 - Build
 
@@ -62,15 +61,7 @@ The project targets **.NET 10** (`net10.0-windows`, WinForms + F#), **Windows x6
     dotnet publish WtProgram -c Release
     ```
 
-    Output: `WtProgram\bin\Release\net10.0-windows\win-x64\publish\WindowTabs.exe`. Add `-p:SelfContained=true` to bundle the .NET runtime (no runtime install needed, much bigger exe).
-
-- Installer (MSI, Windows only)
-
-    ```
-    dotnet build WtSetup\WtSetup.wixproj -c Release
-    ```
-
-    Output: `WtSetup\bin\x64\Release\WtSetup.msi`.
+    Output: `WtProgram\bin\Release\net10.0-windows\win-x64\publish\WindowTabs.exe`. It is the only file needed (~4.5 MB, requires the .NET 10 Desktop Runtime). Add `-p:SelfContained=true` to bundle the runtime too (no install needed, ~110 MB exe).
 
 - Visual Studio
 
