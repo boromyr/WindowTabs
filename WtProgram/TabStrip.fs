@@ -60,6 +60,11 @@ type TabStrip(monitor:ITabStripMonitor) as this =
     let hwndRef = ref IntPtr.Zero
     let gcPendingRef = ref false
     let isShrunkCell = Cell.create(false)
+    // full title of a hovered tab whose text is cut off
+    let toolTip = new ToolTip()
+    let toolTipOwner = { new IWin32Window with member x.Handle = hwndRef.Value }
+    let toolTipTabRef = ref None
+    let toolTipTimerRef = ref None
 
     let isMouseOverExport = Cell.export <| fun() ->
         hoverCell.value.IsSome
@@ -156,6 +161,8 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             this.hit.iter <| fun(hitTab, hitPart) ->
                 match action with
                 | MouseDown ->
+                    // stays hidden until the mouse moves to another tab
+                    this.hideToolTip()
                     capturedCell.set(Some(hitTab, hitPart))
                 | MouseUp ->
                     capturedCell.value.iter <| fun(capturedTab, capturedPart) ->
@@ -173,7 +180,33 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             this.setPt(None)
             capturedCell.set(None)
             hoverCell.set(None)
+        this.updateToolTip()
         this.update()
+
+    member private this.hideToolTip() =
+        toolTipTimerRef.Value.iter(fun (timer:IDisposable) -> timer.Dispose())
+        toolTipTimerRef := None
+        toolTip.Hide(toolTipOwner)
+
+    member private this.updateToolTip() =
+        let tab = hoverCell.value.map fst
+        if tab <> toolTipTabRef.Value then
+            this.hideToolTip()
+            toolTipTabRef := tab
+            tab.iter <| fun tab ->
+                if capturedCell.value.IsNone && this.ts.isTabTextTruncated tab then
+                    toolTipTimerRef := Some(ThreadHelper.cancelablePostBack toolTip.InitialDelay <| fun() ->
+                        toolTipTimerRef := None
+                        this.showToolTip tab)
+
+    member private this.showToolTip tab =
+        let tabBottom = this.ts.tabLocation(tab).y + this.ts.tabSize.height + Dpi.px 2
+        // below the tab, but never under the cursor
+        let pt =
+            match ptCell.value with
+            | Some(pt) -> Pt(pt.x, max tabBottom (pt.y + Dpi.px 20))
+            | None -> Pt(this.ts.tabLocation(tab).x, tabBottom)
+        toolTip.Show(this.tabInfo(tab).text, toolTipOwner, pt.Point)
 
     member private this.wndProc(msg:Win32Message) =
         let mousePt() = msg.lParam.location
@@ -228,7 +261,11 @@ type TabStrip(monitor:ITabStripMonitor) as this =
                 ThreadHelper.cancelablePostBack 2000 (fun() ->
                     gcPendingRef := false
                     GC.Collect()) |> ignore
-        else this.window.hide()
+        else
+            if toolTipTabRef.Value.IsSome then
+                toolTipTabRef := None
+                this.hideToolTip()
+            this.window.hide()
     
     member private this.render : Img = 
         try
@@ -267,6 +304,9 @@ type TabStrip(monitor:ITabStripMonitor) as this =
         lorderCell.map(fun l -> l.where((<>) tab))
         zorderCell.map(fun z -> z.where((<>) tab))
         tabInfoCell.map(fun m -> m.remove tab)
+        if toolTipTabRef.Value = Some(tab) then
+            toolTipTabRef := None
+            this.hideToolTip()
         Cell.endUpdate()
 
     member this.tabs : Set2<Tab> = Set2(lorderCell.value)
@@ -386,7 +426,9 @@ type TabStrip(monitor:ITabStripMonitor) as this =
             }
         ts.render
 
-    member this.destroy() = 
+    member this.destroy() =
+        this.hideToolTip()
+        toolTip.Dispose()
         eventHandlersCell.value.items.iter(fun d -> d.Dispose())
         layeredWindowCell.value.iter <| fun w -> (w :?> IDisposable).Dispose()
         this.window.destroy()

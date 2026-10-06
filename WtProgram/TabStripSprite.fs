@@ -141,8 +141,26 @@ type TabSprite<'id> = {
         let width = max 1 width
         Sz(width, this.size.height)
 
-    member this.tabTextBrush = 
+    member this.tabTextBrush =
         new SolidBrush(this.appearance.tabTextColor)
+
+    member private this.textFormat =
+        let format = new StringFormat()
+        do format.LineAlignment <- StringAlignment.Center
+        do format.Alignment <- StringAlignment.Near
+        do format.Trimming <- StringTrimming.EllipsisCharacter
+        do format.FormatFlags <- format.FormatFlags ||| StringFormatFlags.NoWrap
+        format
+
+    // true when the title doesn't fit and is drawn cut off with an ellipsis
+    member this.isTextTruncated =
+        if this.onlyIcon then false
+        else
+            use bmp = new Bitmap(1, 1)
+            use g = Graphics.FromImage(bmp)
+            use format = this.textFormat
+            let size = g.MeasureString(this.displayInfo.text, this.displayInfo.textFont, PointF.Empty, format)
+            size.Width > float32(this.textSize.width)
 
     interface ISprite with
         member this.image =
@@ -156,11 +174,7 @@ type TabSprite<'id> = {
                 let text = this.displayInfo.text
                 let font = this.displayInfo.textFont
                 let brush = this.tabTextBrush
-                let format = new StringFormat()
-                do format.LineAlignment <- StringAlignment.Center
-                do format.Alignment <- StringAlignment.Near
-                do format.Trimming <- StringTrimming.EllipsisCharacter
-                do format.FormatFlags <- format.FormatFlags ||| StringFormatFlags.NoWrap
+                let format = this.textFormat
                 let bounds = Rect(this.textLocation, this.textSize)
                 do g.DrawString(text, font, brush, bounds.Rectangle.RectangleF, format)
             img
@@ -192,7 +206,9 @@ type TabStripSprite<'id> when 'id : equality = {
     member private this.tabOverlap = -float(Dpi.px 3)
     member private this.tabMaxLen = float(this.appearance.tabMaxWidth)
 
-    member private this.tabSprite (tab:'id) =
+    member private this.tabSprite (tab:'id) = this.tabRecord(tab) :> ISprite
+
+    member private this.tabRecord (tab:'id) =
         {
             TabSprite.id = tab
             isTop =
@@ -212,7 +228,9 @@ type TabStripSprite<'id> when 'id : equality = {
                 match this.captured with
                 | Some(id, part) when id = tab -> Some(part)
                 | _ -> None
-        } :> ISprite
+        }
+
+    member this.isTabTextTruncated tab = this.tabRecord(tab).isTextTruncated
 
     member private this.count = this.lorder.length
 
