@@ -399,4 +399,22 @@
   <data name="KeyAlt" xml:space="preserve">
     <value>Alt</value>
   </data>
+  <data name="About" xml:space="preserve">
+    <value>Informazioni</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Apri</value>
+  </data>
+  <data name="AboutLinks" xml:space="preserve">
+    <value>Link e crediti</value>
+  </data>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>Gestione delle finestre a schede, in stile browser, per il desktop.</value>
+  </data>
+  <data name="AboutOriginal" xml:space="preserve">
+    <value>Autore originale</value>
+  </data>
+  <data name="AboutFork" xml:space="preserve">
+    <value>Fork di origine</value>
+  </data>
 </root>

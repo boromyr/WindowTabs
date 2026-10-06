@@ -12,7 +12,7 @@ type NotifyIconPlugin() as this =
     member this.icon = Cell.cacheProp this <| fun() ->
         let notifyIcon = new NotifyIcon()
         notifyIcon.Visible <- true
-        notifyIcon.Text <- "WindowTabs (version " + Services.program.version + ")"
+        notifyIcon.Text <- "WindowTabs"
         notifyIcon.Icon <- Services.openIcon("Bemo.ico")
         notifyIcon.ContextMenuStrip <- new ContextMenuStrip()
         notifyIcon.DoubleClick.Add <| fun _ -> Services.managerView.show()

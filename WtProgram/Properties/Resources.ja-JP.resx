@@ -393,4 +393,22 @@
   <data name="KeyAlt" xml:space="preserve">
     <value>Alt</value>
   </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="AboutLinks" xml:space="preserve">
+    <value>Links and credits</value>
+  </data>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>Browser-style tabbed window management for the desktop.</value>
+  </data>
+  <data name="AboutOriginal" xml:space="preserve">
+    <value>Original author</value>
+  </data>
+  <data name="AboutFork" xml:space="preserve">
+    <value>Upstream fork</value>
+  </data>
 </root>

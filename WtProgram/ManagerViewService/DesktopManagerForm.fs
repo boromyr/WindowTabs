@@ -21,6 +21,7 @@ type DesktopManagerForm() =
         ("", "Behavior", SettingsViewType.HotKeySettings, fun () -> HotKeyView() :> ISettingsView)
         ("", "Workspace", SettingsViewType.LayoutSettings, fun () -> WorkspaceView() :> ISettingsView)
         ("", "Diagnostics", SettingsViewType.DiagnosticsSettings, fun () -> DiagnosticsView() :> ISettingsView)
+        ("", "About", SettingsViewType.AboutSettings, fun () -> AboutView() :> ISettingsView)
         ])
 
     let views : ISettingsView option array = Array.create pageInfo.length None

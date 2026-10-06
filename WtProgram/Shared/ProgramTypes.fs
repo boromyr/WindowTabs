@@ -66,6 +66,7 @@ type SettingsViewType =
     | LicenseSettings
     | AppearanceSettings
     | DiagnosticsSettings
+    | AboutSettings
     | LayoutSettings
     | HotKeySettings
 
